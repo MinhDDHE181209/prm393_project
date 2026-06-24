@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../services/auth_service.dart';
+import '../screens/home_screen.dart';
+import 'package:go_router/go_router.dart';
 
 enum _FormStatus { idle, loading, error }
 
@@ -54,23 +56,13 @@ class _AuthScreenState extends State<AuthScreen>
     super.dispose();
   }
 
-  void _goHomePlaceholder() {
-    if (!mounted) return;
-    // TODO: thay bằng context.go('/home') khi router.dart đã nối S03.
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const Scaffold(
-          body: Center(
-            child: Text(
-              'Đăng nhập thành công ✅\n(S03 Home chưa được viết)',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+
+
+void _goHome() {
+  if (!mounted) return;
+  context.go('/home');
+}
+
 
   Future<void> _handleLogin() async {
     if (!_loginFormKey.currentState!.validate()) return;
@@ -83,7 +75,7 @@ class _AuthScreenState extends State<AuthScreen>
         email: _loginEmailCtrl.text,
         password: _loginPasswordCtrl.text,
       );
-      _goHomePlaceholder();
+      _goHome();
     } on AuthException catch (e) {
       setState(() {
         _status = _FormStatus.error;
@@ -109,7 +101,7 @@ class _AuthScreenState extends State<AuthScreen>
         password: _registerPasswordCtrl.text,
         displayName: _registerNameCtrl.text,
       );
-      _goHomePlaceholder();
+      _goHome();
     } on AuthException catch (e) {
       setState(() {
         _status = _FormStatus.error;
@@ -135,7 +127,7 @@ class _AuthScreenState extends State<AuthScreen>
         setState(() => _status = _FormStatus.idle);
         return;
       }
-      _goHomePlaceholder();
+      _goHome();
     } on AuthException catch (e) {
       setState(() {
         _status = _FormStatus.error;
@@ -179,9 +171,9 @@ class _AuthScreenState extends State<AuthScreen>
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.12),
+                    color: Colors.red.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                    border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
                   ),
                   child: Text(
                     _errorMessage!,

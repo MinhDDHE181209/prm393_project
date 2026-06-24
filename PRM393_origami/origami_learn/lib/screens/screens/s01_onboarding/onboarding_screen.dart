@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:origami_learn/app/constants.dart';
 import 'package:origami_learn/app/theme.dart';
 import 'package:origami_learn/screens/auth_screen.dart';
+import 'package:go_router/go_router.dart';
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -32,28 +33,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
   ];
 
+
+
   Future<void> _finishOnboarding({required bool asGuest}) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool(AppConstants.keyIsFirstTime, false);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyIsFirstTime, false);
 
-  if (asGuest) {
-    await prefs.setBool(AppConstants.keyIsGuest, true);
+    if (asGuest) {
+      await prefs.setBool(AppConstants.keyIsGuest, true);
+    } else {
+      await prefs.setBool(AppConstants.keyIsGuest, false);
+    }
+
+    if (!mounted) return;
+
+    if (asGuest) {
+      context.go('/home');
+    } else {
+      context.go('/auth');
+    }
   }
 
-  if (!mounted) return;
-
-  if (asGuest) {
-    // TODO: khi router đã nối S03, thay bằng context.go('/home').
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const _PlaceholderNextScreen(asGuest: true)),
-    );
-  } else {
-    // TODO: khi router đã nối, thay bằng context.go('/auth').
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const AuthScreen()),
-    );
-  }
-}
 
   @override
   void dispose() {
@@ -176,22 +176,5 @@ class _OnboardData {
 
 /// Placeholder tạm thời cho tới khi S02 (Auth) / S03 (Home) được viết.
 /// Xoá widget này khi router.dart được nối thật.
-class _PlaceholderNextScreen extends StatelessWidget {
-  final bool asGuest;
-  const _PlaceholderNextScreen({required this.asGuest});
+// Hết file onboarding_screen.dart
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text(
-          asGuest
-              ? 'Vào với tư cách Guest ✅\n(S03 Home chưa được viết)'
-              : 'Sẽ tới màn S02 Auth\n(chưa được viết)',
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-    );
-  }
-}

@@ -55,7 +55,8 @@ flutter:
   uses-material-design: true
   # Cấu hình assets để chuẩn bị cho dữ liệu seed JSON và âm thanh sau này
   assets:
-    - assets/data/
+    - assets/data/seed_collections.json
+    - assets/data/seed_models.json
     - assets/images/
     - assets/gifs/
     - assets/audio/
