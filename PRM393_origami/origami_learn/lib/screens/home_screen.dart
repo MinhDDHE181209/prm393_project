@@ -5,6 +5,8 @@ import '../../app/theme.dart';
 import '../../models/collection_model.dart';
 import '../../services/origami_service.dart';
 import 'package:flutter/material.dart';
+import 'package:origami_learn/screens/collection_detail_screen.dart';
+
 
 
 class HomeScreen extends StatefulWidget {
@@ -173,14 +175,13 @@ class _CollectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // Chỉ bộ sưu tập đầu tiên được mở cho Khách xem thử, các bộ sưu tập khác đòi đăng nhập
-        if (isGuest && collection.id != '1') {
-          onAuthRequired();
-        } else {
-          // TODO: context.go('/collection/${collection.id}') khi S06 xong
-        }
-      },
+     onTap: () {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => CollectionDetailScreen(collection: collection),
+    ),
+  );
+},
       child: Container(
         decoration: BoxDecoration(
           color: AppTheme.surface,
