@@ -18,6 +18,10 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(AppConstants.keyIsGuest) ?? false;
   }
+  Future<void> clearGuestStatus() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(AppConstants.keyIsGuest, false);
+}
 
   /// Đăng nhập bằng email/password.
   /// Ném AuthException với message tiếng Việt để UI hiển thị trực tiếp.

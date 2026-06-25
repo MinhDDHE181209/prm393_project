@@ -3,6 +3,7 @@ import '../../app/theme.dart';
 import '../../models/collection_model.dart';
 import '../../models/origami_model.dart';
 import '../../services/origami_service.dart';
+import 'model_detail_screen.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
   final CollectionModel collection;
@@ -95,7 +96,11 @@ class _ModelTile extends StatelessWidget {
           );
           return;
         }
-        // TODO: điều hướng sang S07 Model Detail khi xong
+        Navigator.of(context).push(
+  MaterialPageRoute(
+    builder: (_) => ModelDetailScreen(model: model),
+  ),
+);
       },
       child: Container(
         padding: const EdgeInsets.all(14),

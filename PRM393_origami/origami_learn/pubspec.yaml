@@ -57,6 +57,7 @@ flutter:
   assets:
     - assets/data/seed_collections.json
     - assets/data/seed_models.json
+    - assets/data/seed_steps.json
     - assets/images/
     - assets/gifs/
     - assets/audio/

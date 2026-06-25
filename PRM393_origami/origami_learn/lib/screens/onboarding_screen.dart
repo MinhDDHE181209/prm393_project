@@ -177,4 +177,3 @@ class _OnboardData {
 /// Placeholder tạm thời cho tới khi S02 (Auth) / S03 (Home) được viết.
 /// Xoá widget này khi router.dart được nối thật.
 // Hết file onboarding_screen.dart
-

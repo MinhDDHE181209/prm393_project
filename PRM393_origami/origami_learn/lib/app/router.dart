@@ -1,6 +1,6 @@
 
 import 'package:go_router/go_router.dart';
-import '../screens/screens/s01_onboarding/onboarding_screen.dart';
+import '../screens/onboarding_screen.dart';
 import '../screens/auth_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/collection_detail_screen.dart';

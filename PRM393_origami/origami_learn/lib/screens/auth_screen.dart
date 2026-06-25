@@ -4,6 +4,7 @@ import '../../services/auth_service.dart';
 import '../screens/home_screen.dart';
 import 'package:go_router/go_router.dart';
 
+
 enum _FormStatus { idle, loading, error }
 
 class AuthScreen extends StatefulWidget {
@@ -65,76 +66,71 @@ void _goHome() {
 
 
   Future<void> _handleLogin() async {
-    if (!_loginFormKey.currentState!.validate()) return;
+  if (!_loginFormKey.currentState!.validate()) return;
+  setState(() {
+    _status = _FormStatus.loading;
+    _errorMessage = null;
+  });
+  try {
+    await _authService.signInWithEmail(
+      email: _loginEmailCtrl.text,
+      password: _loginPasswordCtrl.text,
+    );
+    // 👈 Thêm dòng này
+    await _authService.clearGuestStatus();
+    _goHome();
+  } on AuthException catch (e) {
     setState(() {
-      _status = _FormStatus.loading;
-      _errorMessage = null;
+      _status = _FormStatus.error;
+      _errorMessage = e.message;
     });
-    try {
-      await _authService.signInWithEmail(
-        email: _loginEmailCtrl.text,
-        password: _loginPasswordCtrl.text,
-      );
-      _goHome();
-    } on AuthException catch (e) {
-      setState(() {
-        _status = _FormStatus.error;
-        _errorMessage = e.message;
-      });
-    } catch (_) {
-      setState(() {
-        _status = _FormStatus.error;
-        _errorMessage = 'Đã có lỗi không xác định. Vui lòng thử lại.';
-      });
-    }
   }
+}
 
-  Future<void> _handleRegister() async {
-    if (!_registerFormKey.currentState!.validate()) return;
+Future<void> _handleRegister() async {
+  if (!_registerFormKey.currentState!.validate()) return;
+  setState(() {
+    _status = _FormStatus.loading;
+    _errorMessage = null;
+  });
+  try {
+    await _authService.register(
+      email: _registerEmailCtrl.text,
+      password: _registerPasswordCtrl.text,
+      displayName: _registerNameCtrl.text,
+    );
+    // 👈 Thêm dòng này
+    await _authService.clearGuestStatus();
+    _goHome();
+  } on AuthException catch (e) {
     setState(() {
-      _status = _FormStatus.loading;
-      _errorMessage = null;
+      _status = _FormStatus.error;
+      _errorMessage = e.message;
     });
-    try {
-      await _authService.register(
-        email: _registerEmailCtrl.text,
-        password: _registerPasswordCtrl.text,
-        displayName: _registerNameCtrl.text,
-      );
-      _goHome();
-    } on AuthException catch (e) {
-      setState(() {
-        _status = _FormStatus.error;
-        _errorMessage = e.message;
-      });
-    } catch (_) {
-      setState(() {
-        _status = _FormStatus.error;
-        _errorMessage = 'Đã có lỗi không xác định. Vui lòng thử lại.';
-      });
-    }
   }
+}
 
-  Future<void> _handleGoogleSignIn() async {
-    setState(() {
-      _status = _FormStatus.loading;
-      _errorMessage = null;
-    });
-    try {
-      final credential = await _authService.signInWithGoogle();
-      if (credential == null) {
-        // Người dùng tự huỷ — không phải lỗi, chỉ về trạng thái idle.
-        setState(() => _status = _FormStatus.idle);
-        return;
-      }
-      _goHome();
-    } on AuthException catch (e) {
-      setState(() {
-        _status = _FormStatus.error;
-        _errorMessage = e.message;
-      });
+Future<void> _handleGoogleSignIn() async {
+  setState(() {
+    _status = _FormStatus.loading;
+    _errorMessage = null;
+  });
+  try {
+    final credential = await _authService.signInWithGoogle();
+    if (credential == null) {
+      setState(() => _status = _FormStatus.idle);
+      return;
     }
+    // 👈 Thêm dòng này
+    await _authService.clearGuestStatus();
+    _goHome();
+  } on AuthException catch (e) {
+    setState(() {
+      _status = _FormStatus.error;
+      _errorMessage = e.message;
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
