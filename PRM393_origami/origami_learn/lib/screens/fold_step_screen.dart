@@ -4,6 +4,8 @@ import '../../models/fold_step.dart';
 import '../../models/origami_model.dart';
 import '../../services/origami_service.dart';
 import 'complete_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/progress_service.dart';
 
 class FoldStepScreen extends StatefulWidget {
   final OrigamiModel model;
@@ -29,7 +31,19 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
   void initState() {
     super.initState();
     _stepsFuture = _service.getFoldSteps(widget.model.id);
+    
+    
   }
+  Future<void> _loadSession() async {
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+  if (userId == null) return;
+
+  final progressService = ProgressService();
+  final session = await progressService.getLastSession(userId);
+  if (session != null && session['modelId'] == widget.model.id) {
+    setState(() => _currentStep = session['currentStep'] as int);
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -221,14 +235,24 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
       ),
     );
   } else {
-    setState(() => _currentStep++);
+onPressed: () {
+  setState(() => _currentStep++);
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+  if (userId != null) {
+    ProgressService().saveSession(
+      userId: userId,
+      modelId: widget.model.id,
+      currentStep: _currentStep,
+    );
   }
+};  }
 },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: Text(
                           isLast ? '🎉 Hoàn thành!' : 'Tiếp theo →',
+                          
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
