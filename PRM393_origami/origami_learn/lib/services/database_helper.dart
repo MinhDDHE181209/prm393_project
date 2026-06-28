@@ -16,10 +16,15 @@ class DatabaseHelper {
   Future<Database> _init() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, AppConstants.dbName);
-    return openDatabase(path, version: AppConstants.dbVersion, onCreate: _onCreate);
+    return openDatabase(
+      path,
+      version: AppConstants.dbVersion,
+      onCreate: _onCreate,
+    );
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    // ✅ FIX: column names phải khớp với VocabWord.fromMap() / toMap()
     await db.execute('''
       CREATE TABLE saved_words (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,17 +39,21 @@ class DatabaseHelper {
       )
     ''');
 
+    // ✅ FIX: column names khớp với UserProgress.fromMap() / toMap()
+    // Dùng snake_case nhất quán, toMap() sẽ map sang đây
     await db.execute('''
       CREATE TABLE user_progress (
-        user_id           TEXT    PRIMARY KEY,
-        xp                INTEGER NOT NULL DEFAULT 0,
-        level             INTEGER NOT NULL DEFAULT 1,
-        streak            INTEGER NOT NULL DEFAULT 0,
-        last_session_date INTEGER,
-        models_completed  INTEGER NOT NULL DEFAULT 0
+        user_id             TEXT    PRIMARY KEY,
+        total_xp            INTEGER NOT NULL DEFAULT 0,
+        level               INTEGER NOT NULL DEFAULT 1,
+        streak              INTEGER NOT NULL DEFAULT 0,
+        last_fold_date      TEXT,
+        unlocked_collections TEXT   NOT NULL DEFAULT '[]',
+        models_completed    INTEGER NOT NULL DEFAULT 0
       )
     ''');
 
+    // ✅ FIX: thêm user_id vào sessions để query đúng
     await db.execute('''
       CREATE TABLE sessions (
         user_id      TEXT    NOT NULL,

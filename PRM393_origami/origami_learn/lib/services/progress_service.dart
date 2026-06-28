@@ -1,20 +1,21 @@
+import 'package:sqflite/sqflite.dart';
 import '../app/constants.dart';
 import '../models/user_progress.dart';
 import 'database_helper.dart';
-import 'package:sqflite/sqflite.dart';
+
 class ProgressService {
-  final _db = DatabaseHelper.instance;
+  final _dbHelper = DatabaseHelper.instance;
 
   /// Lấy progress của user, tạo mới nếu chưa có.
   Future<UserProgress> getProgress(String userId) async {
-    final db = await _db.database;
+    final db = await _dbHelper.database;
+    // ✅ FIX: where dùng đúng column name 'user_id'
     final maps = await db.query(
       'user_progress',
-      where: 'userId = ?',
+      where: 'user_id = ?',
       whereArgs: [userId],
     );
     if (maps.isEmpty) {
-      // Tạo record mới cho user lần đầu
       final newProgress = UserProgress(userId: userId);
       await db.insert('user_progress', newProgress.toMap());
       return newProgress;
@@ -24,16 +25,32 @@ class ProgressService {
 
   /// Cộng XP và tự động tính level mới.
   Future<UserProgress> addXP(String userId, int amount) async {
-    final db = await _db.database;
+    final db = await _dbHelper.database;
     final current = await getProgress(userId);
     final newXP = current.totalXP + amount;
     final newLevel = UserProgress.levelFromXP(newXP);
-
     final updated = current.copyWith(totalXP: newXP, level: newLevel);
+    // ✅ FIX: where dùng đúng column name 'user_id'
     await db.update(
       'user_progress',
       updated.toMap(),
-      where: 'userId = ?',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
+    return updated;
+  }
+
+  /// ✅ FIX: thêm method incrementModelsCompleted mà fold_step_screen.dart gọi
+  Future<UserProgress> incrementModelsCompleted(String userId) async {
+    final db = await _dbHelper.database;
+    final current = await getProgress(userId);
+    final updated = current.copyWith(
+      modelsCompleted: current.modelsCompleted + 1,
+    );
+    await db.update(
+      'user_progress',
+      updated.toMap(),
+      where: 'user_id = ?',
       whereArgs: [userId],
     );
     return updated;
@@ -41,7 +58,7 @@ class ProgressService {
 
   /// Cập nhật streak — gọi mỗi khi hoàn thành 1 mẫu gấp.
   Future<UserProgress> updateStreak(String userId) async {
-    final db = await _db.database;
+    final db = await _dbHelper.database;
     final current = await getProgress(userId);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -57,15 +74,11 @@ class ProgressService {
         current.lastFoldDate!.day,
       );
       final diff = today.difference(lastDate).inDays;
-
       if (diff == 0) {
-        // Hôm nay đã gấp rồi, không tăng streak
         newStreak = current.streak;
       } else if (diff == 1) {
-        // Hôm qua có gấp → streak tăng
         newStreak = current.streak + 1;
       } else {
-        // Bỏ ngày → streak reset
         newStreak = 1;
       }
     }
@@ -77,7 +90,7 @@ class ProgressService {
     await db.update(
       'user_progress',
       updated.toMap(),
-      where: 'userId = ?',
+      where: 'user_id = ?',
       whereArgs: [userId],
     );
     return updated;
@@ -88,15 +101,14 @@ class ProgressService {
       String userId, String collectionId) async {
     final current = await getProgress(userId);
     if (current.unlockedCollections.contains(collectionId)) return current;
-
     final updated = current.copyWith(
       unlockedCollections: [...current.unlockedCollections, collectionId],
     );
-    final db = await _db.database;
+    final db = await _dbHelper.database;
     await db.update(
       'user_progress',
       updated.toMap(),
-      where: 'userId = ?',
+      where: 'user_id = ?',
       whereArgs: [userId],
     );
     return updated;
@@ -109,38 +121,40 @@ class ProgressService {
     required int currentStep,
     int currentModule = 0,
   }) async {
-    final db = await _db.database;
+    final db = await _dbHelper.database;
     await db.insert(
-      'session_progress',
+      'sessions',
       {
-        'modelId': modelId,
-        'userId': userId,
-        'currentStep': currentStep,
-        'currentModule': currentModule,
-        'startedAt': DateTime.now().toIso8601String(),
+        'user_id': userId,
+        'model_id': modelId,
+        'current_step': currentStep,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  /// Xoá session khi hoàn thành.
-  Future<void> clearSession(String modelId) async {
-    final db = await _db.database;
+  /// ✅ FIX: signature nhất quán — nhận cả userId lẫn modelId
+  Future<void> clearSession({
+    required String userId,
+    required String modelId,
+  }) async {
+    final db = await _dbHelper.database;
     await db.delete(
-      'session_progress',
-      where: 'modelId = ?',
-      whereArgs: [modelId],
+      'sessions',
+      where: 'user_id = ? AND model_id = ?',
+      whereArgs: [userId, modelId],
     );
   }
 
   /// Lấy session đang dở (dùng cho thẻ "Tiếp tục gấp" ở Home).
   Future<Map<String, dynamic>?> getLastSession(String userId) async {
-    final db = await _db.database;
+    final db = await _dbHelper.database;
     final maps = await db.query(
-      'session_progress',
-      where: 'userId = ?',
+      'sessions',
+      where: 'user_id = ?',
       whereArgs: [userId],
-      orderBy: 'startedAt DESC',
+      orderBy: 'updated_at DESC',
       limit: 1,
     );
     return maps.isEmpty ? null : maps.first;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../services/auth_service.dart';
-import '../screens/home_screen.dart';
+// ✅ FIX: bỏ import HomeScreen — dùng context.go() từ GoRouter thay vì Navigator
 import 'package:go_router/go_router.dart';
 
 

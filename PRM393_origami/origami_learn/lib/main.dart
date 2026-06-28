@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ FIX: thêm Riverpod
 import 'firebase_options.dart';
 import 'app/theme.dart';
 import 'app/router.dart';
@@ -9,7 +10,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const OrigamiLearnApp());
+  // ✅ FIX: bọc ProviderScope để toàn app dùng được Riverpod providers
+  runApp(const ProviderScope(child: OrigamiLearnApp()));
 }
 
 class OrigamiLearnApp extends StatelessWidget {
@@ -25,4 +27,3 @@ class OrigamiLearnApp extends StatelessWidget {
     );
   }
 }
-

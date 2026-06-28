@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart'; // ✅ FIX: dùng GoRouter
 import '../app/theme.dart';
 import '../app/constants.dart';
 import '../models/origami_model.dart';
 import '../services/vocab_service.dart';
 import '../services/progress_service.dart';
-import 'home_screen.dart';
+// ✅ FIX: bỏ import home_screen.dart — dùng context.go('/home') thay vì Navigator
 
 class CompleteScreen extends StatefulWidget {
   final OrigamiModel model;
@@ -247,10 +248,8 @@ class _CompleteScreenState extends State<CompleteScreen>
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-              (route) => false,
-            ),
+          // ✅ FIX: dùng GoRouter thay Navigator.pushAndRemoveUntil
+          onPressed: () => context.go('/home'),
             icon: const Icon(Icons.home_outlined),
             label: const Text('Về trang chủ',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -262,13 +261,8 @@ class _CompleteScreenState extends State<CompleteScreen>
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () {
-              // Phase 5 — sẽ dùng context.go('/word-vault') sau khi có router
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Word Vault sẽ có ở Phase 5'),
-                backgroundColor: Colors.black87,
-              ));
-            },
+            // ✅ FIX: dùng context.go('/home') rồi user tự navigate sang Word Vault
+            onPressed: () => context.go('/home'),
             icon: const Icon(Icons.menu_book_outlined, color: AppTheme.teal),
             label: const Text('Xem Word Vault',
                 style: TextStyle(color: AppTheme.teal)),
