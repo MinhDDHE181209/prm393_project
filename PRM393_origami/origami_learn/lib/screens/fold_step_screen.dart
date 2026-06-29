@@ -41,8 +41,8 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
     final uid = _uid;
     if (uid == null) return;
     final session = await _progressService.getLastSession(uid);
-    if (session != null && session['modelId'] == widget.model.id && mounted) {
-      setState(() => _currentStep = session['currentStep'] as int);
+    if (session != null && session['model_id'] == widget.model.id && mounted) {
+      setState(() => _currentStep = session['current_step'] as int);
     }
   }
 

@@ -1,34 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../app/theme.dart';
 import '../../models/collection_model.dart';
 import '../../services/origami_service.dart';
+import '../providers/collection_provider.dart';
 import 'collection_detail_screen.dart';
+import 'word_vault_screen.dart';
+import 'profile_screen.dart';
+import 'payment_bottom_sheet.dart';
+import '../services/progress_service.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final _service = OrigamiService();
-  late Future<List<CollectionModel>> _collectionsFuture;
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentTab = 0;
 
   // Demo: mẫu đang gấp dở (sau này lấy từ SQLite)
-  final _inProgressModel = _InProgressData(
-    name: 'Con hạc giấy',
-    nameJP: '折り鶴',
-    emoji: '🦢',
-    percent: 0.4, // 40%
-  );
+  _InProgressData? _inProgressModel;  // null = không có session nào
+final _progressService = ProgressService();
 
   @override
   void initState() {
     super.initState();
-    _collectionsFuture = _service.getCollections();
   }
 
   User? get _currentUser => FirebaseAuth.instance.currentUser;
@@ -47,8 +46,8 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentTab,
         children: [
           _buildHomeTab(),
-          const _PlaceholderTab(icon: Icons.menu_book_outlined, label: 'Word Vault\n(S05 - chưa làm)'),
-          const _PlaceholderTab(icon: Icons.person_outline, label: 'Hồ sơ\n(S04 - chưa làm)'),
+          const WordVaultScreen(),
+          const ProfileScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -78,10 +77,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeTab() {
+    final collectionsAsync = ref.watch(collectionsProvider);
+
     return SafeArea(
-      child: FutureBuilder<List<CollectionModel>>(
-        future: _collectionsFuture,
-        builder: (context, snapshot) {
+      child: collectionsAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppTheme.amber),
+        ),
+        error: (error, stack) => Center(
+          child: Text(
+            'Lỗi tải dữ liệu\n$error',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.redAccent),
+          ),
+        ),
+        data: (collections) {
           return CustomScrollView(
             slivers: [
               // ── AppBar chào mừng + avatar ──
@@ -129,12 +139,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               // ── Thẻ "Tiếp tục gấp" ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: _ContinueFoldingCard(data: _inProgressModel),
-                ),
-              ),
+if (_inProgressModel != null)
+  SliverToBoxAdapter(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: _ContinueFoldingCard(data: _inProgressModel!), // Thêm dấu ! ở đây
+    ),
+  ),
 
               // ── Tiêu đề "Bộ sưu tập" ──
               const SliverToBoxAdapter(
@@ -152,67 +163,38 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               // ── Grid 2 cột ──
-              if (snapshot.connectionState == ConnectionState.waiting)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppTheme.amber),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 0.82,
                   ),
-                )
-              else if (snapshot.hasError)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Text(
-                      'Lỗi tải dữ liệu\n${snapshot.error}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 0.82,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final c = snapshot.data![index];
-                        return _CollectionCard(
-                          collection: c,
-                          onTap: () {
-                            if (!c.isUnlocked && c.price > 0) {
-                              // TODO: mở S08 Payment khi đến Phase 6
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('🔒 "${c.title}" cần mở khoá (${c.price}đ)'),
-                                  backgroundColor: Colors.black87,
-                                  action: SnackBarAction(
-                                    label: 'Mở khoá',
-                                    textColor: AppTheme.amber,
-                                    onPressed: () {
-                                      // TODO: context.push('/payment/${c.id}')
-                                    },
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => CollectionDetailScreen(collection: c),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                      childCount: snapshot.data?.length ?? 0,
-                    ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final c = collections[index];
+                      return _CollectionCard(
+                        collection: c,
+                        onTap: () async {
+                          if (!c.isUnlocked && c.price > 0) {
+                            // Mở S08 Payment
+                            await PaymentBottomSheet.show(context, ref, collection: c);
+                            return;
+                          }
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => CollectionDetailScreen(collection: c),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    childCount: collections.length,
                   ),
                 ),
+              ),
             ],
           );
         },
@@ -227,6 +209,7 @@ class _InProgressData {
   final String nameJP;
   final String emoji;
   final double percent; // 0.0 – 1.0
+  
   const _InProgressData({
     required this.name,
     required this.nameJP,
@@ -403,27 +386,3 @@ class _CollectionCard extends StatelessWidget {
   }
 }
 
-// ── Placeholder cho tab chưa làm ──────────────────────────────────────────────
-class _PlaceholderTab extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _PlaceholderTab({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 48, color: Colors.white24),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white38, fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-}

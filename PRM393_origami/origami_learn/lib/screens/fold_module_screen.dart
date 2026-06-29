@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../app/theme.dart';
 import '../../models/fold_step.dart';
 import '../../models/origami_model.dart';
 import '../../services/origami_service.dart';
+import '../../services/progress_service.dart';
+import '../../services/vocab_service.dart';
 import 'assembly_screen.dart';
 
 class FoldModuleScreen extends StatefulWidget {
@@ -21,16 +24,44 @@ class FoldModuleScreen extends StatefulWidget {
 
 class _FoldModuleScreenState extends State<FoldModuleScreen> {
   final _service = OrigamiService();
+  final _progressService = ProgressService();
+  final _vocabService = VocabService();
   late Future<ModuleData> _dataFuture;
 
   int _currentModule = 0;
   int _currentStep = 0;
   final Set<String> _savedVocabs = {};
 
+  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+
   @override
   void initState() {
     super.initState();
     _dataFuture = _service.getModuleData(widget.model.id);
+    _loadSession();
+    _loadSavedVocabs();
+  }
+
+  Future<void> _loadSession() async {
+    final uid = _uid;
+    if (uid == null) return;
+    final session = await _progressService.getLastSession(uid);
+    if (session != null && session['model_id'] == widget.model.id && mounted) {
+      final savedValue = session['current_step'] as int;
+      setState(() {
+        _currentModule = savedValue ~/ 1000;
+        _currentStep = savedValue % 1000;
+      });
+    }
+  }
+
+  Future<void> _loadSavedVocabs() async {
+    final uid = _uid;
+    if (uid == null) return;
+    final words = await _vocabService.getWords(uid);
+    if (mounted) {
+      setState(() => _savedVocabs.addAll(words.map((w) => w.kanji)));
+    }
   }
 
   @override

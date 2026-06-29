@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
-import '../../app/theme.dart';
-import '../../models/collection_model.dart';
-import '../../models/origami_model.dart';
-import '../../services/origami_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../app/theme.dart';
+import '../models/collection_model.dart';
+import '../models/origami_model.dart';
+import '../services/origami_service.dart';
+import '../providers/collection_provider.dart';
+import 'payment_bottom_sheet.dart';
 import 'model_detail_screen.dart';
 
-class CollectionDetailScreen extends StatefulWidget {
+class CollectionDetailScreen extends ConsumerStatefulWidget {
   final CollectionModel collection;
   const CollectionDetailScreen({super.key, required this.collection});
 
   @override
-  State<CollectionDetailScreen> createState() => _CollectionDetailScreenState();
+  ConsumerState<CollectionDetailScreen> createState() => _CollectionDetailScreenState();
 }
 
-class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
+class _CollectionDetailScreenState extends ConsumerState<CollectionDetailScreen> {
   final _service = OrigamiService();
   late Future<List<OrigamiModel>> _modelsFuture;
 
@@ -25,9 +28,16 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final collectionsAsync = ref.watch(collectionsProvider);
+    final currentCollection = collectionsAsync.valueOrNull?.firstWhere(
+          (c) => c.id == widget.collection.id,
+          orElse: () => widget.collection,
+        ) ??
+        widget.collection;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.collection.emoji} ${widget.collection.title}'),
+        title: Text('${currentCollection.emoji} ${currentCollection.title}'),
       ),
       body: FutureBuilder<List<OrigamiModel>>(
         future: _modelsFuture,
@@ -61,7 +71,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             itemBuilder: (context, index) {
               return _ModelTile(
                 model: models[index],
-                collectionUnlocked: widget.collection.isUnlocked,
+                collection: currentCollection,
+                collectionUnlocked: currentCollection.isUnlocked,
               );
             },
           );
@@ -71,29 +82,26 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
   }
 }
 
-class _ModelTile extends StatelessWidget {
+class _ModelTile extends ConsumerWidget {
   final OrigamiModel model;
+  final CollectionModel collection;
   final bool collectionUnlocked;
 
   const _ModelTile({
     required this.model,
+    required this.collection,
     required this.collectionUnlocked,
   });
 
   bool get _isAccessible => model.isFree || collectionUnlocked;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () {
         if (!_isAccessible) {
-          // TODO: mở S08 Mock Payment khi đến Phase 6
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('🔒 Mở khoá bộ sưu tập để gấp mẫu này'),
-              backgroundColor: Colors.black87,
-            ),
-          );
+          // ✅ S08: mở Mock Payment
+          PaymentBottomSheet.show(context, ref, collection: collection);
           return;
         }
         Navigator.of(context).push(
@@ -214,7 +222,7 @@ class _Tag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
