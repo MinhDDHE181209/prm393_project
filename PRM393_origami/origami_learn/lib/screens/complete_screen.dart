@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:go_router/go_router.dart'; // ✅ FIX: dùng GoRouter
 import '../app/theme.dart';
 import '../app/constants.dart';
 import '../models/origami_model.dart';
-import '../services/vocab_service.dart';
+import '../models/fold_step.dart';
 import '../services/progress_service.dart';
-// ✅ FIX: bỏ import home_screen.dart — dùng context.go('/home') thay vì Navigator
+import '../services/origami_service.dart';
+import '../providers/vocab_provider.dart';
+import 'home_screen.dart';
 
-class CompleteScreen extends StatefulWidget {
+class CompleteScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
   final Color        paperColor;
   final List<String> savedVocabs; // kanji đã lưu trong session
@@ -21,10 +23,10 @@ class CompleteScreen extends StatefulWidget {
   });
 
   @override
-  State<CompleteScreen> createState() => _CompleteScreenState();
+  ConsumerState<CompleteScreen> createState() => _CompleteScreenState();
 }
 
-class _CompleteScreenState extends State<CompleteScreen>
+class _CompleteScreenState extends ConsumerState<CompleteScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double>   _scaleAnim;
@@ -36,7 +38,8 @@ class _CompleteScreenState extends State<CompleteScreen>
   String? _selectedAnswer;
   bool?   _isCorrect;
 
-  late List<_QuizQuestion> _questions;
+  List<VocabRef> _modelVocabs = [];
+  List<_QuizQuestion> _questions = [];
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -51,8 +54,7 @@ class _CompleteScreenState extends State<CompleteScreen>
         CurvedAnimation(parent: _animController, curve: Curves.easeIn);
     _animController.forward();
 
-    _questions = _buildQuestions();
-    _saveProgress();
+    _saveProgressAndLoadVocabs();
   }
 
   @override
@@ -61,56 +63,85 @@ class _CompleteScreenState extends State<CompleteScreen>
     super.dispose();
   }
 
-  // ── Lưu XP + vocab vào SQLite ─────────────────────────────────────────────
-  Future<void> _saveProgress() async {
+  // ── Lưu XP + TẤT CẢ từ vựng của bài vào SQLite ─────────────────────────────
+  Future<void> _saveProgressAndLoadVocabs() async {
     final uid = _uid;
     if (uid == null) return;
 
-    // Cộng XP hoàn thành model (streak tự tính bên trong addXp)
+    // 1. Cộng XP hoàn thành model
     await ProgressService().addXP(uid, AppConstants.xpPerCompleteModel);
 
-    // Lưu từng từ vựng đã lưu trong session
-    if (widget.savedVocabs.isNotEmpty) {
-      final pool    = _mockVocabPool();
-      final service = VocabService();
-      for (final kanji in widget.savedVocabs) {
-        final match = pool.where((v) => v.kanji == kanji).firstOrNull;
-        if (match == null) continue;
-        await service.saveWord(
-          userId:    uid,
-          kanji:     match.kanji,
-          romaji:    match.romaji,
-          meaningVi: match.meaningVi,
-          modelId:   widget.model.id,
-        );
+    // 2. Tải tất cả từ vựng trong bài này
+    final service = OrigamiService();
+    final list = <VocabRef>[];
+    try {
+      if (widget.model.type == 'step') {
+        final steps = await service.getFoldSteps(widget.model.id);
+        for (final s in steps) {
+          list.addAll(s.vocabList);
+        }
+      } else {
+        final moduleData = await service.getModuleData(widget.model.id);
+        for (final m in moduleData.modules) {
+          for (final s in m.steps) {
+            list.addAll(s.vocabList);
+          }
+        }
+        for (final s in moduleData.assembly) {
+          list.addAll(s.vocabList);
+        }
       }
+    } catch (_) {}
+
+    // Lọc trùng theo kanji
+    final uniqueMap = <String, VocabRef>{};
+    for (final v in list) {
+      uniqueMap[v.kanji] = v;
+    }
+    final vocabs = uniqueMap.values.toList();
+
+    // 3. Lưu TẤT CẢ từ vựng của bài vào SQLite thông qua Riverpod notifier để tự động đồng bộ hoá UI
+    final vocabNotifier = ref.read(vocabNotifierProvider.notifier);
+    for (final v in vocabs) {
+      await vocabNotifier.saveWord(
+        kanji: v.kanji,
+        romaji: v.romaji,
+        meaningVi: v.meaningVi,
+        modelId: widget.model.id,
+      );
+    }
+
+    // 4. Xóa session dở dang vì đã hoàn thành
+    await ProgressService().clearSession(userId: uid, modelId: widget.model.id);
+
+    if (mounted) {
+      setState(() {
+        _modelVocabs = vocabs;
+        _questions = _buildQuestions(vocabs);
+      });
     }
   }
 
-  // ── Tạo quiz từ vocab session ──────────────────────────────────────────────
-  List<_QuizQuestion> _buildQuestions() {
-    if (widget.savedVocabs.isEmpty) return [];
-    final pool        = _mockVocabPool();
-    final sessionVocab = pool
-        .where((v) => widget.savedVocabs.contains(v.kanji))
-        .toList();
-    if (sessionVocab.isEmpty) return [];
-
-    final shuffled  = List<_MockVocab>.from(pool)..shuffle();
+  // ── Tạo quiz từ từ vựng trong bài ──────────────────────────────────────────
+  List<_QuizQuestion> _buildQuestions(List<VocabRef> vocabs) {
+    if (vocabs.isEmpty) return [];
+    final pool = _mockVocabPool();
     final questions = <_QuizQuestion>[];
 
-    for (final correct in sessionVocab.take(3)) {
-      final distractors = shuffled
+    final shuffledPool = List<_MockVocab>.from(pool)..shuffle();
+
+    for (final correct in vocabs.take(3)) {
+      final distractors = shuffledPool
           .where((v) => v.kanji != correct.kanji)
           .take(3)
           .map((v) => v.meaningVi)
           .toList();
       final options = [...distractors, correct.meaningVi]..shuffle();
       questions.add(_QuizQuestion(
-        kanji:         correct.kanji,
-        romaji:        correct.romaji,
+        kanji: correct.kanji,
+        romaji: correct.romaji,
         correctAnswer: correct.meaningVi,
-        options:       options,
+        options: options,
       ));
     }
     return questions;
@@ -197,8 +228,8 @@ class _CompleteScreenState extends State<CompleteScreen>
         ),
         const SizedBox(height: 20),
 
-        // ── Từ đã lưu ──
-        if (widget.savedVocabs.isNotEmpty) ...[
+        // ── Từ vựng đã lưu vào Word Vault ──
+        if (_modelVocabs.isNotEmpty) ...[
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -210,7 +241,7 @@ class _CompleteScreenState extends State<CompleteScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '⭐ ${widget.savedVocabs.length} từ đã lưu vào Word Vault',
+                  '📚 ${_modelVocabs.length} từ vựng trong bài đã lưu vào Word Vault',
                   style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -220,8 +251,8 @@ class _CompleteScreenState extends State<CompleteScreen>
                 Wrap(
                   spacing: 8,
                   runSpacing: 6,
-                  children: widget.savedVocabs
-                      .map((kanji) => Container(
+                  children: _modelVocabs
+                      .map((v) => Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
@@ -230,7 +261,7 @@ class _CompleteScreenState extends State<CompleteScreen>
                               border: Border.all(
                                   color: AppTheme.amber.withValues(alpha: 0.3)),
                             ),
-                            child: Text(kanji,
+                            child: Text(v.kanji,
                                 style: const TextStyle(
                                     color: AppTheme.amber,
                                     fontSize: 14,
@@ -248,8 +279,12 @@ class _CompleteScreenState extends State<CompleteScreen>
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-          // ✅ FIX: dùng GoRouter thay Navigator.pushAndRemoveUntil
-          onPressed: () => context.go('/home'),
+            onPressed: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const HomeScreen(initialTab: 0)),
+                (route) => false,
+              );
+            },
             icon: const Icon(Icons.home_outlined),
             label: const Text('Về trang chủ',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -261,8 +296,12 @@ class _CompleteScreenState extends State<CompleteScreen>
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            // ✅ FIX: dùng context.go('/home') rồi user tự navigate sang Word Vault
-            onPressed: () => context.go('/home'),
+            onPressed: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const HomeScreen(initialTab: 1)),
+                (route) => false,
+              );
+            },
             icon: const Icon(Icons.menu_book_outlined, color: AppTheme.teal),
             label: const Text('Xem Word Vault',
                 style: TextStyle(color: AppTheme.teal)),

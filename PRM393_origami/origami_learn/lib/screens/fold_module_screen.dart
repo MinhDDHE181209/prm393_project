@@ -55,6 +55,18 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
     }
   }
 
+  Future<void> _saveSession() async {
+    final uid = _uid;
+    if (uid == null) return;
+    // Mã hoá module + step vào 1 int: module * 1000 + step
+    final encoded = _currentModule * 1000 + _currentStep;
+    await _progressService.saveSession(
+      userId: uid,
+      modelId: widget.model.id,
+      currentStep: encoded,
+    );
+  }
+
   Future<void> _loadSavedVocabs() async {
     final uid = _uid;
     if (uid == null) return;
@@ -320,10 +332,11 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
           Expanded(
             flex: 2,
             child: ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (!isLastStep) {
                   // Sang bước tiếp trong module
                   setState(() => _currentStep++);
+                  await _saveSession();
                 } else if (!isLastModule) {
                   // Hết module → popup chuyển module tiếp
                   _showNextModuleDialog(data);
@@ -379,12 +392,13 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
             child: const Text('Ở lại', style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
               setState(() {
                 _currentModule++;
                 _currentStep = 0;
               });
+              await _saveSession();
             },
             child: const Text('Tiếp tục'),
           ),

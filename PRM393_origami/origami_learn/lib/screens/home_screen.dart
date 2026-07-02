@@ -1,33 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../app/theme.dart';
-import '../../models/collection_model.dart';
-import '../../services/origami_service.dart';
+import '../app/theme.dart';
+import '../models/collection_model.dart';
+import '../models/origami_model.dart';
+import '../services/origami_service.dart';
 import '../providers/collection_provider.dart';
 import 'collection_detail_screen.dart';
 import 'word_vault_screen.dart';
 import 'profile_screen.dart';
 import 'payment_bottom_sheet.dart';
+import 'fold_step_screen.dart';
+import 'fold_module_screen.dart';
 import '../services/progress_service.dart';
 
+/// Global RouteObserver để HomeScreen biết khi nào được hiển thị lại
+final homeRouteObserver = RouteObserver<ModalRoute<void>>();
+
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  final int initialTab;
+  const HomeScreen({super.key, this.initialTab = 0});
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   int _currentTab = 0;
 
-  // Demo: mẫu đang gấp dở (sau này lấy từ SQLite)
-  _InProgressData? _inProgressModel;  // null = không có session nào
-final _progressService = ProgressService();
+  _InProgressData? _inProgressModel;
+  final _progressService = ProgressService();
+  final _origamiService  = OrigamiService();
+
+  // Tham chiếu tới global observer
+  // (không cần static field riêng nữa)
 
   @override
   void initState() {
     super.initState();
+    _currentTab = widget.initialTab;
+    _loadInProgressSession();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) homeRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void dispose() {
+    homeRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  /// Gọi mỗi khi user pop từ màn hình con (fold/complete) về Home
+  @override
+  void didPopNext() {
+    _loadInProgressSession();
+  }
+
+  Future<void> _loadInProgressSession() async {
+    final uid = _currentUser?.uid;
+    if (uid == null) return;
+    final session = await _progressService.getLastSession(uid);
+    if (session == null) {
+      // Hoàn thành hoặc không có session → ẩn thẻ
+      if (mounted) setState(() => _inProgressModel = null);
+      return;
+    }
+    try {
+      final modelId = session['model_id'] as String;
+      final encoded = session['current_step'] as int;
+      final model   = await _origamiService.getModelById(modelId);
+
+      // encoded = modulePart * 1000 + stepPart
+      // stepPart là bước hiện tại (0-based index đã +1 khi lưu)
+      final stepPart  = encoded % 1000;           // bước trong module
+      final total     = model.stepCount > 0 ? model.stepCount : 10;
+      final percent   = (stepPart / total).clamp(0.0, 1.0);
+
+      // Chọn emoji dựa trên tên model
+      final emoji = _pickEmoji(model.nameVi);
+
+      if (mounted) {
+        setState(() {
+          _inProgressModel = _InProgressData(
+            model:   model,
+            emoji:   emoji,
+            percent: percent,
+          );
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _inProgressModel = null);
+    }
+  }
+
+  String _pickEmoji(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('hạc') || n.contains('crane')) return '🦢';
+    if (n.contains('bướm') || n.contains('butterfly')) return '🦋';
+    if (n.contains('cá') || n.contains('fish')) return '🐟';
+    if (n.contains('hoa') || n.contains('flower')) return '🌸';
+    if (n.contains('thỏ') || n.contains('rabbit')) return '🐰';
+    if (n.contains('khủng long') || n.contains('dino')) return '🦕';
+    return '🎏';
   }
 
   User? get _currentUser => FirebaseAuth.instance.currentUser;
@@ -139,13 +218,38 @@ final _progressService = ProgressService();
               ),
 
               // ── Thẻ "Tiếp tục gấp" ──
-if (_inProgressModel != null)
-  SliverToBoxAdapter(
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: _ContinueFoldingCard(data: _inProgressModel!), // Thêm dấu ! ở đây
-    ),
-  ),
+              // ── Thẻ "Tiếp tục gấp" ──
+              if (_inProgressModel != null)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: _ContinueFoldingCard(
+                      data: _inProgressModel!,
+                      onTap: () {
+                        final model = _inProgressModel!.model;
+                        if (model.type == 'step') {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => FoldStepScreen(
+                                model: model,
+                                paperColor: const Color(0xFFE53935), // màu mặc định
+                              ),
+                            ),
+                          ).then((_) => _loadInProgressSession());
+                        } else {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => FoldModuleScreen(
+                                model: model,
+                                paperColor: const Color(0xFFE53935), // màu mặc định
+                              ),
+                            ),
+                          ).then((_) => _loadInProgressSession());
+                        }
+                      },
+                    ),
+                  ),
+                ),
 
               // ── Tiêu đề "Bộ sưu tập" ──
               const SliverToBoxAdapter(
@@ -205,14 +309,12 @@ if (_inProgressModel != null)
 
 // ── Thẻ tiếp tục gấp ──────────────────────────────────────────────────────────
 class _InProgressData {
-  final String name;
-  final String nameJP;
+  final OrigamiModel model;
   final String emoji;
-  final double percent; // 0.0 – 1.0
+  final double percent;
   
   const _InProgressData({
-    required this.name,
-    required this.nameJP,
+    required this.model,
     required this.emoji,
     required this.percent,
   });
@@ -220,67 +322,71 @@ class _InProgressData {
 
 class _ContinueFoldingCard extends StatelessWidget {
   final _InProgressData data;
-  const _ContinueFoldingCard({required this.data});
+  final VoidCallback onTap;
+  const _ContinueFoldingCard({required this.data, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.teal.withOpacity(0.3), AppTheme.amber.withOpacity(0.2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.teal.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Text(data.emoji, style: const TextStyle(fontSize: 40)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Tiếp tục gấp',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  data.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                Text(
-                  data.nameJP,
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: data.percent,
-                    backgroundColor: Colors.white12,
-                    valueColor: const AlwaysStoppedAnimation(AppTheme.amber),
-                    minHeight: 6,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${(data.percent * 100).toInt()}% hoàn thành',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
-                ),
-              ],
-            ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppTheme.teal.withOpacity(0.3), AppTheme.amber.withOpacity(0.2)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(width: 8),
-          const Icon(Icons.play_circle_fill, color: AppTheme.amber, size: 36),
-        ],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.teal.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Text(data.emoji, style: const TextStyle(fontSize: 40)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Tiếp tục gấp',
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    data.model.nameVi,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  Text(
+                    data.model.nameJP,
+                    style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: data.percent,
+                      backgroundColor: Colors.white12,
+                      valueColor: const AlwaysStoppedAnimation(AppTheme.amber),
+                      minHeight: 6,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${(data.percent * 100).toInt()}% hoàn thành',
+                    style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.play_circle_fill, color: AppTheme.amber, size: 36),
+          ],
+        ),
       ),
     );
   }

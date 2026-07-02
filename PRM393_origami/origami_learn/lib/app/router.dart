@@ -2,11 +2,11 @@ import 'package:go_router/go_router.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/auth_screen.dart';
 import '../screens/home_screen.dart';
-// S05 và S04 sẽ được import khi tạo xong (Phase 3)
 
 class AppRouter {
   static final router = GoRouter(
     initialLocation: '/onboarding',
+    observers: [homeRouteObserver],
     routes: [
       GoRoute(
         path: '/onboarding',
@@ -23,7 +23,6 @@ class AppRouter {
         name: 'home',
         builder: (context, state) => const HomeScreen(),
       ),
-      // TODO Phase 3: thêm /word-vault, /profile, /payment/:collectionId
     ],
   );
 }

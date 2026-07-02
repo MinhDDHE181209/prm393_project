@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/vocabulary.dart';
+import '../models/collection_model.dart';
+import '../models/origami_model.dart';
 import '../services/vocab_service.dart';
 import 'auth_provider.dart';
+import 'collection_provider.dart';
 
 // ─── Enum filter ─────────────────────────────────────────────────────────────
 enum VocabFilter { all, needsReview, learned }
@@ -38,6 +41,70 @@ final filteredVocabProvider =
         return all.where((w) => !w.needsReview).toList();
     }
   });
+});
+
+// ─── Lớp chứa thông tin từ vựng đã được nhóm theo Collection ──────────────────
+class CollectionGroupedVocabs {
+  final CollectionModel collection;
+  final List<VocabWord> words;
+  const CollectionGroupedVocabs({required this.collection, required this.words});
+}
+
+// ─── Grouped Vocabs Provider ──────────────────────────────────────────────────
+final groupedVocabsProvider = FutureProvider.autoDispose<List<CollectionGroupedVocabs>>((ref) async {
+  final service = ref.read(origamiServiceProvider);
+  
+  // 1. Tải tất cả collections
+  final collections = await service.getCollections();
+  
+  // 2. Tải tất cả models để map modelId -> Collection
+  final allModels = <OrigamiModel>[];
+  for (final c in collections) {
+    try {
+      final models = await service.getModelsInCollection(c.id);
+      allModels.addAll(models);
+    } catch (_) {}
+  }
+  
+  final modelToCollectionMap = <String, CollectionModel>{};
+  for (final m in allModels) {
+    final col = collections.firstWhere((c) => c.id == m.collectionId, orElse: () => collections.first);
+    modelToCollectionMap[m.id] = col;
+  }
+  
+  // 3. Lấy từ vựng hiện tại sau khi filter (nếu null thì coi như danh sách trống)
+  final wordsAsync = ref.watch(filteredVocabProvider);
+  final words = wordsAsync.valueOrNull ?? [];
+  
+  // 4. Nhóm từ vựng theo collectionId
+  final groupsMap = <String, List<VocabWord>>{};
+  for (final w in words) {
+    final col = modelToCollectionMap[w.modelId];
+    final colId = col?.id ?? 'other';
+    groupsMap.putIfAbsent(colId, () => []).add(w);
+  }
+  
+  // 5. Chuyển đổi map thành List<CollectionGroupedVocabs>
+  final result = <CollectionGroupedVocabs>[];
+  for (final entry in groupsMap.entries) {
+    if (entry.key == 'other') {
+      const dummyCollection = CollectionModel(
+        id: 'other',
+        title: 'Từ vựng khác',
+        titleJP: 'その他',
+        coverUrl: '',
+        emoji: '📚',
+        price: 0,
+        isUnlocked: true,
+      );
+      result.add(CollectionGroupedVocabs(collection: dummyCollection, words: entry.value));
+    } else {
+      final col = collections.firstWhere((c) => c.id == entry.key);
+      result.add(CollectionGroupedVocabs(collection: col, words: entry.value));
+    }
+  }
+  
+  return result;
 });
 
 // ─── Count badges ─────────────────────────────────────────────────────────────

@@ -101,14 +101,15 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
   }
 
   Future<void> _finish() async {
-    final uid = _uid;
+    final uid   = _uid;
+    await _stepsFuture; // đã load xong rồi
     if (uid != null) {
-      // ✅ FIX: đủ 4 calls, đúng signature
       await _progressService.addXP(uid, AppConstants.xpPerCompleteModel);
       await _progressService.incrementModelsCompleted(uid);
       await _progressService.updateStreak(uid);
       await _progressService.clearSession(userId: uid, modelId: widget.model.id);
     }
+
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(
       builder: (_) => CompleteScreen(

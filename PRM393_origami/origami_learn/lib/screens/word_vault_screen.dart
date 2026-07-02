@@ -26,7 +26,7 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
   Widget build(BuildContext context) {
     final userType = ref.watch(userTypeProvider);
     final filter   = ref.watch(vocabFilterProvider);
-    final filteredAsync = ref.watch(filteredVocabProvider);
+
 
     if (userType == UserType.guest) {
       return Scaffold(
@@ -99,20 +99,30 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
 
           // Word list
           Expanded(
-            child: filteredAsync.when(
+            child: ref.watch(groupedVocabsProvider).when(
               loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.amber)),
               error: (e, _) => Center(child: Text('Lỗi: $e', style: const TextStyle(color: Colors.red))),
-              data: (words) {
-                final filtered = _searchQuery.isEmpty
-                    ? words
-                    : words.where((w) =>
-                        w.kanji.toLowerCase().contains(_searchQuery) ||
-                        w.romaji.toLowerCase().contains(_searchQuery) ||
-                        w.meaningVi.toLowerCase().contains(_searchQuery)).toList();
+              data: (groups) {
+                // Lọc từ vựng theo tìm kiếm trên từng nhóm
+                final List<CollectionGroupedVocabs> filteredGroups = [];
+                for (final g in groups) {
+                  final matchedWords = _searchQuery.isEmpty
+                      ? g.words
+                      : g.words.where((w) =>
+                          w.kanji.toLowerCase().contains(_searchQuery) ||
+                          w.romaji.toLowerCase().contains(_searchQuery) ||
+                          w.meaningVi.toLowerCase().contains(_searchQuery)).toList();
+                  if (matchedWords.isNotEmpty) {
+                    filteredGroups.add(CollectionGroupedVocabs(collection: g.collection, words: matchedWords));
+                  }
+                }
 
-                if (filtered.isEmpty) {
+                if (filteredGroups.isEmpty) {
                   return _EmptyState(filter: filter, hasSearch: _searchQuery.isNotEmpty);
                 }
+
+                final totalWords = filteredGroups.fold<int>(0, (sum, g) => sum + g.words.length);
+                final allMatchedWords = filteredGroups.expand((g) => g.words).toList();
 
                 return Column(
                   children: [
@@ -120,12 +130,12 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                       child: Row(
                         children: [
-                          Text('${filtered.length} từ',
+                          Text('$totalWords từ',
                               style: const TextStyle(color: Colors.white54, fontSize: 13)),
                           const Spacer(),
-                          if (filter == VocabFilter.needsReview && filtered.isNotEmpty)
+                          if (filter == VocabFilter.needsReview && totalWords > 0)
                             TextButton.icon(
-                              onPressed: () => _startQuickReview(context, filtered),
+                              onPressed: () => _startQuickReview(context, allMatchedWords),
                               icon: const Icon(Icons.flash_on, size: 16, color: AppTheme.amber),
                               label: const Text('Ôn tập nhanh',
                                   style: TextStyle(color: AppTheme.amber, fontSize: 13)),
@@ -134,11 +144,57 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
                       ),
                     ),
                     Expanded(
-                      child: ListView.separated(
+                      child: ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, i) => _VocabTile(word: filtered[i]),
+                        itemCount: filteredGroups.length,
+                        itemBuilder: (context, groupIdx) {
+                          final g = filteredGroups[groupIdx];
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Group Header (Tên Collection)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16, bottom: 8),
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(g.collection.emoji, style: const TextStyle(fontSize: 18)),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          g.collection.title,
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${g.words.length} từ',
+                                        style: const TextStyle(color: Colors.white30, fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Danh sách từ trong group
+                              ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: g.words.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                itemBuilder: (context, wordIdx) => _VocabTile(word: g.words[wordIdx]),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ],
