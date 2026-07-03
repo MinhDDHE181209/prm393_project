@@ -20,6 +20,7 @@ class DatabaseHelper {
       path,
       version: AppConstants.dbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -35,6 +36,10 @@ class DatabaseHelper {
         model_id     TEXT    NOT NULL,
         needs_review INTEGER NOT NULL DEFAULT 1,
         saved_at     INTEGER NOT NULL,
+        repetitions  INTEGER NOT NULL DEFAULT 0,
+        ease_factor  REAL    NOT NULL DEFAULT 2.5,
+        interval_days INTEGER NOT NULL DEFAULT 0,
+        next_review_at INTEGER NOT NULL,
         UNIQUE(user_id, kanji)
       )
     ''');
@@ -72,5 +77,27 @@ class DatabaseHelper {
         PRIMARY KEY(user_id, collection_id)
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+          'ALTER TABLE saved_words ADD COLUMN repetitions INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+          'ALTER TABLE saved_words ADD COLUMN ease_factor REAL NOT NULL DEFAULT 2.5');
+      await db.execute(
+          'ALTER TABLE saved_words ADD COLUMN interval_days INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+          'ALTER TABLE saved_words ADD COLUMN next_review_at INTEGER');
+      // Backfill: từ cần ôn → due ngay; đã thuộc → lùi 30 ngày
+      await db.execute('''
+        UPDATE saved_words
+        SET next_review_at = CASE
+          WHEN needs_review = 1 THEN saved_at
+          ELSE saved_at + ${30 * 24 * 60 * 60 * 1000}
+        END
+        WHERE next_review_at IS NULL
+      ''');
+    }
   }
 }

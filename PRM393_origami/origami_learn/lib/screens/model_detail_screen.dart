@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../app/router.dart';
+import '../../app/routes.dart';
 import '../../app/theme.dart';
 import '../../models/origami_model.dart';
-import 'fold_step_screen.dart';
-import 'fold_module_screen.dart';
 
 class ModelDetailScreen extends StatefulWidget {
   final OrigamiModel model;
@@ -149,27 +150,21 @@ class _ModelDetailScreenState extends State<ModelDetailScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
              onPressed: () {
+  final colorQuery = AppRouter.paperColorQuery(
+      _paperColors[_selectedColorIndex].color);
   if (model.type == 'step') {
-    // 🎯 Gấp từng bước → S09 FoldStepScreen
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => FoldStepScreen(
-          model: model,
-          paperColor: _paperColors[_selectedColorIndex].color,
-        ),
-      ),
+    context.pushNamed(
+      AppRoutes.foldStep,
+      pathParameters: {'modelId': model.id},
+      queryParameters: {AppRoutes.paperColorQuery: colorQuery},
     );
   } else {
-  // 🧩 type == 'module'
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => FoldModuleScreen(
-        model: model,
-        paperColor: _paperColors[_selectedColorIndex].color,
-      ),
-    ),
-  );
-}
+    context.pushNamed(
+      AppRoutes.foldModule,
+      pathParameters: {'modelId': model.id},
+      queryParameters: {AppRoutes.paperColorQuery: colorQuery},
+    );
+  }
 },
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: const Text(

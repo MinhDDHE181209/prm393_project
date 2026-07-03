@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../app/routes.dart';
 import '../app/theme.dart';
 import '../models/collection_model.dart';
 import '../models/origami_model.dart';
 import '../services/origami_service.dart';
 import '../providers/collection_provider.dart';
+import '../providers/auth_provider.dart';
 import 'payment_bottom_sheet.dart';
-import 'model_detail_screen.dart';
 
 class CollectionDetailScreen extends ConsumerStatefulWidget {
   final CollectionModel collection;
@@ -93,22 +95,24 @@ class _ModelTile extends ConsumerWidget {
     required this.collectionUnlocked,
   });
 
-  bool get _isAccessible => model.isFree || collectionUnlocked;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final userType = ref.watch(userTypeProvider);
+    final isAccessible = model.isFree ||
+        collectionUnlocked ||
+        userType.unlocksAllCollections;
+
     return GestureDetector(
       onTap: () {
-        if (!_isAccessible) {
-          // ✅ S08: mở Mock Payment
+        if (!isAccessible) {
           PaymentBottomSheet.show(context, ref, collection: collection);
           return;
         }
-        Navigator.of(context).push(
-  MaterialPageRoute(
-    builder: (_) => ModelDetailScreen(model: model),
-  ),
-);
+        context.pushNamed(
+          AppRoutes.modelDetail,
+          pathParameters: {'modelId': model.id},
+          extra: model,
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -116,7 +120,7 @@ class _ModelTile extends ConsumerWidget {
           color: AppTheme.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: _isAccessible ? Colors.transparent : Colors.white12,
+            color: isAccessible ? Colors.transparent : Colors.white12,
           ),
         ),
         child: Row(
@@ -148,13 +152,13 @@ class _ModelTile extends ConsumerWidget {
                         child: Text(
                           model.nameVi,
                           style: TextStyle(
-                            color: _isAccessible ? Colors.white : Colors.white38,
+                            color: isAccessible ? Colors.white : Colors.white38,
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
                           ),
                         ),
                       ),
-                      if (!_isAccessible)
+                      if (!isAccessible)
                         const Icon(Icons.lock, color: Colors.white38, size: 16),
                     ],
                   ),
@@ -192,7 +196,7 @@ class _ModelTile extends ConsumerWidget {
             // ── Mũi tên ──
             Icon(
               Icons.chevron_right,
-              color: _isAccessible ? Colors.white54 : Colors.white12,
+              color: isAccessible ? Colors.white54 : Colors.white12,
             ),
           ],
         ),

@@ -5,14 +5,15 @@ import '../app/theme.dart';
 import '../models/collection_model.dart';
 import '../models/origami_model.dart';
 import '../services/origami_service.dart';
+import 'package:go_router/go_router.dart';
+import '../app/router.dart';
+import '../app/routes.dart';
+import '../providers/auth_provider.dart';
 import '../providers/collection_provider.dart';
-import 'collection_detail_screen.dart';
+import '../providers/fold_session_provider.dart';
 import 'word_vault_screen.dart';
 import 'profile_screen.dart';
 import 'payment_bottom_sheet.dart';
-import 'fold_step_screen.dart';
-import 'fold_module_screen.dart';
-import '../services/progress_service.dart';
 
 /// Global RouteObserver để HomeScreen biết khi nào được hiển thị lại
 final homeRouteObserver = RouteObserver<ModalRoute<void>>();
@@ -29,8 +30,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   int _currentTab = 0;
 
   _InProgressData? _inProgressModel;
-  final _progressService = ProgressService();
-  final _origamiService  = OrigamiService();
+  final _origamiService = OrigamiService();
 
   // Tham chiếu tới global observer
   // (không cần static field riêng nữa)
@@ -62,9 +62,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   Future<void> _loadInProgressSession() async {
-    final uid = _currentUser?.uid;
-    if (uid == null) return;
-    final session = await _progressService.getLastSession(uid);
+    final sessionAsync = ref.read(inProgressSessionProvider);
+    final session = sessionAsync.valueOrNull ??
+        await ref.read(inProgressSessionProvider.future);
     if (session == null) {
       // Hoàn thành hoặc không có session → ẩn thẻ
       if (mounted) setState(() => _inProgressModel = null);
@@ -227,24 +227,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                       data: _inProgressModel!,
                       onTap: () {
                         final model = _inProgressModel!.model;
+                        final colorQuery = AppRouter.paperColorQuery(
+                            const Color(0xFFE53935));
                         if (model.type == 'step') {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => FoldStepScreen(
-                                model: model,
-                                paperColor: const Color(0xFFE53935), // màu mặc định
-                              ),
-                            ),
-                          ).then((_) => _loadInProgressSession());
+                          context
+                              .pushNamed(
+                                AppRoutes.foldStep,
+                                pathParameters: {'modelId': model.id},
+                                queryParameters: {
+                                  AppRoutes.paperColorQuery: colorQuery,
+                                },
+                              )
+                              .then((_) => _loadInProgressSession());
                         } else {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => FoldModuleScreen(
-                                model: model,
-                                paperColor: const Color(0xFFE53935), // màu mặc định
-                              ),
-                            ),
-                          ).then((_) => _loadInProgressSession());
+                          context
+                              .pushNamed(
+                                AppRoutes.foldModule,
+                                pathParameters: {'modelId': model.id},
+                                queryParameters: {
+                                  AppRoutes.paperColorQuery: colorQuery,
+                                },
+                              )
+                              .then((_) => _loadInProgressSession());
                         }
                       },
                     ),
@@ -282,15 +286,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                       return _CollectionCard(
                         collection: c,
                         onTap: () async {
-                          if (!c.isUnlocked && c.price > 0) {
-                            // Mở S08 Payment
+                          final userType = ref.read(userTypeProvider);
+                          if (!c.isUnlocked &&
+                              c.price > 0 &&
+                              !userType.unlocksAllCollections) {
                             await PaymentBottomSheet.show(context, ref, collection: c);
                             return;
                           }
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => CollectionDetailScreen(collection: c),
-                            ),
+                          context.pushNamed(
+                            AppRoutes.collectionDetail,
+                            pathParameters: {'collectionId': c.id},
+                            extra: c,
                           );
                         },
                       );

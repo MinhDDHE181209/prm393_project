@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../app/routes.dart';
 import '../app/theme.dart';
 import '../models/vocabulary.dart';
 import '../providers/vocab_provider.dart';
@@ -28,7 +30,7 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
     final filter   = ref.watch(vocabFilterProvider);
 
 
-    if (userType == UserType.guest) {
+    if (userType == UserType.guest || !userType.canUseWordVault) {
       return Scaffold(
         backgroundColor: AppTheme.background,
         appBar: _buildAppBar(),
@@ -298,9 +300,9 @@ class _VocabTile extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                word.needsReview ? 'Cần ôn' : 'Đã thuộc',
+                word.isDueForReview ? 'Cần ôn' : 'Đã thuộc',
                 style: TextStyle(
-                  color: word.needsReview ? Colors.red.shade300 : AppTheme.teal,
+                  color: word.isDueForReview ? Colors.red.shade300 : AppTheme.teal,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -308,12 +310,12 @@ class _VocabTile extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             GestureDetector(
-              onTap: () => word.needsReview
-                  ? notifier.markReviewed(word.kanji)
+              onTap: () => word.isDueForReview
+                  ? notifier.markReviewed(word.kanji, quality: 4)
                   : notifier.markNeedsReview(word.kanji),
               child: Icon(
-                word.needsReview ? Icons.check_circle_outline : Icons.refresh,
-                color: word.needsReview ? AppTheme.teal : Colors.white38,
+                word.isDueForReview ? Icons.check_circle_outline : Icons.refresh,
+                color: word.isDueForReview ? AppTheme.teal : Colors.white38,
                 size: 22,
               ),
             ),
@@ -450,7 +452,7 @@ class _GuestPlaceholder extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: () => Navigator.pushNamed(context, '/auth'),
+              onPressed: () => context.goNamed(AppRoutes.auth),
               child: const Text(
   'Đăng ký ngay', 
   style: TextStyle(fontWeight: FontWeight.bold), //  Đúng

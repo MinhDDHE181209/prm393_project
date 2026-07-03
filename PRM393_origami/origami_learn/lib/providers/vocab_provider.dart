@@ -36,9 +36,9 @@ final filteredVocabProvider =
       case VocabFilter.all:
         return all;
       case VocabFilter.needsReview:
-        return all.where((w) => w.needsReview).toList();
+        return all.where((w) => w.isDueForReview).toList();
       case VocabFilter.learned:
-        return all.where((w) => !w.needsReview).toList();
+        return all.where((w) => !w.isDueForReview).toList();
     }
   });
 });
@@ -116,7 +116,7 @@ final reviewCountProvider = Provider.autoDispose<int>((ref) {
   return ref
           .watch(vocabListProvider)
           .valueOrNull
-          ?.where((w) => w.needsReview)
+          ?.where((w) => w.isDueForReview)
           .length ??
       0;
 });
@@ -153,11 +153,11 @@ class VocabNotifier extends AsyncNotifier<void> {
     ref.invalidate(vocabListProvider);
   }
 
-  Future<void> markReviewed(String kanji) async {
+  Future<void> markReviewed(String kanji, {int quality = 4}) async {
     final uid = ref.read(currentUidProvider);
     if (uid == 'guest') return;
     final service = ref.read(vocabServiceProvider);
-    await service.markReviewed(userId: uid, kanji: kanji);
+    await service.markReviewed(userId: uid, kanji: kanji, quality: quality);
     ref.invalidate(vocabListProvider);
   }
 

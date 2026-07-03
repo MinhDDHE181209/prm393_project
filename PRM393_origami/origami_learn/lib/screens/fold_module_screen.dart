@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../app/router.dart';
+import '../../app/routes.dart';
 import '../../app/theme.dart';
 import '../../models/fold_step.dart';
 import '../../models/origami_model.dart';
+import '../../providers/fold_session_provider.dart';
 import '../../services/origami_service.dart';
-import '../../services/progress_service.dart';
-import '../../services/vocab_service.dart';
-import 'assembly_screen.dart';
 
-class FoldModuleScreen extends StatefulWidget {
+class FoldModuleScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
   final Color paperColor;
 
@@ -19,65 +20,34 @@ class FoldModuleScreen extends StatefulWidget {
   });
 
   @override
-  State<FoldModuleScreen> createState() => _FoldModuleScreenState();
+  ConsumerState<FoldModuleScreen> createState() => _FoldModuleScreenState();
 }
 
-class _FoldModuleScreenState extends State<FoldModuleScreen> {
+class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
   final _service = OrigamiService();
-  final _progressService = ProgressService();
-  final _vocabService = VocabService();
   late Future<ModuleData> _dataFuture;
-
-  int _currentModule = 0;
-  int _currentStep = 0;
-  final Set<String> _savedVocabs = {};
-
-  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   @override
   void initState() {
     super.initState();
     _dataFuture = _service.getModuleData(widget.model.id);
-    _loadSession();
-    _loadSavedVocabs();
-  }
-
-  Future<void> _loadSession() async {
-    final uid = _uid;
-    if (uid == null) return;
-    final session = await _progressService.getLastSession(uid);
-    if (session != null && session['model_id'] == widget.model.id && mounted) {
-      final savedValue = session['current_step'] as int;
-      setState(() {
-        _currentModule = savedValue ~/ 1000;
-        _currentStep = savedValue % 1000;
-      });
-    }
-  }
-
-  Future<void> _saveSession() async {
-    final uid = _uid;
-    if (uid == null) return;
-    // Mã hoá module + step vào 1 int: module * 1000 + step
-    final encoded = _currentModule * 1000 + _currentStep;
-    await _progressService.saveSession(
-      userId: uid,
-      modelId: widget.model.id,
-      currentStep: encoded,
-    );
-  }
-
-  Future<void> _loadSavedVocabs() async {
-    final uid = _uid;
-    if (uid == null) return;
-    final words = await _vocabService.getWords(uid);
-    if (mounted) {
-      setState(() => _savedVocabs.addAll(words.map((w) => w.kanji)));
-    }
+    Future.microtask(() => ref
+        .read(foldSessionProvider.notifier)
+        .initSession(widget.model.id, FoldFlowType.module));
   }
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(foldSessionProvider);
+    if (!session.isLoaded) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: AppTheme.amber)),
+      );
+    }
+
+    final _currentModule = session.currentModule;
+    final _currentStep = session.currentStep;
+    final _savedVocabs = session.savedVocabs;
     return FutureBuilder<ModuleData>(
       future: _dataFuture,
       builder: (context, snapshot) {
@@ -117,7 +87,8 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
           body: Column(
             children: [
               // ── Progress bar kép: module + step ──
-              _buildDoubleProgressBar(data, module),
+              _buildDoubleProgressBar(
+                  data, module, _currentModule, _currentStep),
 
               Expanded(
                 child: SingleChildScrollView(
@@ -224,7 +195,7 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
                         ...step.vocabList.map((v) => _VocabCard(
                               vocab: v,
                               isSaved: _savedVocabs.contains(v.kanji),
-                              onSave: () => _toggleSave(v.kanji, context),
+                              onSave: () => _toggleSave(v),
                             )),
                       ],
                     ],
@@ -237,7 +208,9 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
                   isLastStep: isLastStep,
                   isLastModule: isLastModule,
                   data: data,
-                  module: module),
+                  module: module,
+                  currentModule: _currentModule,
+                  currentStep: _currentStep),
             ],
           ),
         );
@@ -245,7 +218,12 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
     );
   }
 
-  Widget _buildDoubleProgressBar(ModuleData data, ModuleGroup module) {
+  Widget _buildDoubleProgressBar(
+    ModuleData data,
+    ModuleGroup module,
+    int currentModule,
+    int currentStep,
+  ) {
     return Column(
       children: [
         // Module progress
@@ -257,7 +235,7 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
                   style: TextStyle(color: Colors.white38, fontSize: 11)),
               Expanded(
                 child: LinearProgressIndicator(
-                  value: (_currentModule + 1) / data.modules.length,
+                  value: (currentModule + 1) / data.modules.length,
                   backgroundColor: Colors.white12,
                   valueColor:
                       const AlwaysStoppedAnimation(AppTheme.amber),
@@ -276,7 +254,7 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
                   style: TextStyle(color: Colors.white38, fontSize: 11)),
               Expanded(
                 child: LinearProgressIndicator(
-                  value: (_currentStep + 1) / module.steps.length,
+                  value: (currentStep + 1) / module.steps.length,
                   backgroundColor: Colors.white12,
                   valueColor:
                       const AlwaysStoppedAnimation(AppTheme.teal),
@@ -295,6 +273,8 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
     required bool isLastModule,
     required ModuleData data,
     required ModuleGroup module,
+    required int currentModule,
+    required int currentStep,
   }) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
@@ -304,20 +284,22 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
       ),
       child: Row(
         children: [
-          if (_currentStep > 0 || _currentModule > 0)
+          if (currentStep > 0 || currentModule > 0)
             Expanded(
               flex: 1,
               child: OutlinedButton(
                 onPressed: () {
-                  setState(() {
-                    if (_currentStep > 0) {
-                      _currentStep--;
-                    } else {
-                      _currentModule--;
-                      _currentStep =
-                          data.modules[_currentModule].steps.length - 1;
-                    }
-                  });
+                  if (currentStep > 0) {
+                    ref
+                        .read(foldSessionProvider.notifier)
+                        .setModuleStep(currentModule, currentStep - 1);
+                  } else {
+                    final prevModule = currentModule - 1;
+                    ref.read(foldSessionProvider.notifier).setModuleStep(
+                          prevModule,
+                          data.modules[prevModule].steps.length - 1,
+                        );
+                  }
                 },
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -327,30 +309,24 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
                     style: TextStyle(color: Colors.white70)),
               ),
             ),
-          if (_currentStep > 0 || _currentModule > 0)
+          if (currentStep > 0 || currentModule > 0)
             const SizedBox(width: 12),
           Expanded(
             flex: 2,
             child: ElevatedButton(
               onPressed: () async {
                 if (!isLastStep) {
-                  // Sang bước tiếp trong module
-                  setState(() => _currentStep++);
-                  await _saveSession();
+                  await ref.read(foldSessionProvider.notifier).advanceStep();
                 } else if (!isLastModule) {
-                  // Hết module → popup chuyển module tiếp
-                  _showNextModuleDialog(data);
+                  _showNextModuleDialog(data, currentModule);
                 } else {
-                  // Hết module cuối → sang Assembly
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => AssemblyScreen(
-                        model: widget.model,
-                        paperColor: widget.paperColor,
-                        assemblySteps: data.assembly,
-                        savedVocabs: _savedVocabs,
-                      ),
-                    ),
+                  context.pushReplacementNamed(
+                    AppRoutes.assembly,
+                    pathParameters: {'modelId': widget.model.id},
+                    queryParameters: {
+                      AppRoutes.paperColorQuery:
+                          AppRouter.paperColorQuery(widget.paperColor),
+                    },
                   );
                 }
               },
@@ -373,8 +349,8 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
     );
   }
 
-  void _showNextModuleDialog(ModuleData data) {
-    final nextModule = data.modules[_currentModule + 1];
+  void _showNextModuleDialog(ModuleData data, int currentModule) {
+    final nextModule = data.modules[currentModule + 1];
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -394,11 +370,9 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              setState(() {
-                _currentModule++;
-                _currentStep = 0;
-              });
-              await _saveSession();
+              await ref
+                  .read(foldSessionProvider.notifier)
+                  .advanceModule(currentModule + 1);
             },
             child: const Text('Tiếp tục'),
           ),
@@ -407,18 +381,18 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
     );
   }
 
-  void _toggleSave(String kanji, BuildContext context) {
-    setState(() {
-      if (_savedVocabs.contains(kanji)) {
-        _savedVocabs.remove(kanji);
-      } else {
-        _savedVocabs.add(kanji);
-      }
-    });
+  Future<void> _toggleSave(VocabRef vocab) async {
+    final saved = await ref.read(foldSessionProvider.notifier).toggleVocab(
+          kanji: vocab.kanji,
+          romaji: vocab.romaji,
+          meaningVi: vocab.meaningVi,
+          modelId: widget.model.id,
+        );
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(_savedVocabs.contains(kanji)
-          ? '⭐ Đã lưu "$kanji"'
-          : '✖ Đã bỏ lưu "$kanji"'),
+      content: Text(saved
+          ? '⭐ Đã lưu "${vocab.kanji}"'
+          : '✖ Đã bỏ lưu "${vocab.kanji}"'),
       duration: const Duration(seconds: 1),
       backgroundColor: Colors.black87,
     ));
@@ -473,7 +447,7 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
   }
 
   void _showTooltip(String kanji, String romaji, String meaning) {
-    final isSaved = _savedVocabs.contains(kanji);
+    final isSaved = ref.read(foldSessionProvider).savedVocabs.contains(kanji);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surface,
@@ -500,7 +474,8 @@ class _FoldModuleScreenState extends State<FoldModuleScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  _toggleSave(kanji, context);
+                  _toggleSave(VocabRef(
+                      kanji: kanji, romaji: romaji, meaningVi: meaning));
                   Navigator.pop(context);
                 },
                 icon: Icon(isSaved ? Icons.star : Icons.star_border),

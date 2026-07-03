@@ -15,14 +15,16 @@ final collectionsProvider =
     FutureProvider.autoDispose<List<CollectionModel>>((ref) async {
   final service = ref.read(origamiServiceProvider);
   final progressAsync = ref.watch(userProgressProvider);
+  final userType = ref.watch(userTypeProvider);
   final collections = await service.getCollections();
 
   final unlockedIds =
       progressAsync.valueOrNull?.unlockedCollections ?? [];
 
-  // Merge: collection.isUnlocked = true nếu user đã unlock
   return collections.map((c) {
-    final isUnlocked = c.isUnlocked || unlockedIds.contains(c.id);
+    final isUnlocked = c.isUnlocked ||
+        unlockedIds.contains(c.id) ||
+        userType.unlocksAllCollections;
     return c.copyWith(isUnlocked: isUnlocked);
   }).toList();
 });

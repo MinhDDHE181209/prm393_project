@@ -21,7 +21,7 @@ class AppConstants {
 
   // ── SQLite ──
   static const String dbName = 'origami_learn.db';
-  static const int dbVersion = 1;
+  static const int dbVersion = 2;
 
   // ── Demo account (dùng để bảo vệ báo cáo) ──
   static const String demoEmail = 'demo@origamilearn.app';

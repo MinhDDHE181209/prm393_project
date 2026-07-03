@@ -1,127 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../app/constants.dart';
+import '../app/router.dart';
+import '../app/routes.dart';
 import '../app/theme.dart';
 import '../models/fold_step.dart';
 import '../models/origami_model.dart';
+import '../providers/fold_session_provider.dart';
+import '../providers/progress_provider.dart';
+import '../providers/auth_provider.dart';
 import '../services/origami_service.dart';
-import '../services/progress_service.dart';
-import '../services/vocab_service.dart';
-import 'complete_screen.dart';
-import '../app/constants.dart';
-class FoldStepScreen extends StatefulWidget {
+
+class FoldStepScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
-  final Color        paperColor;
+  final Color paperColor;
 
   const FoldStepScreen({super.key, required this.model, required this.paperColor});
 
   @override
-  State<FoldStepScreen> createState() => _FoldStepScreenState();
+  ConsumerState<FoldStepScreen> createState() => _FoldStepScreenState();
 }
 
-class _FoldStepScreenState extends State<FoldStepScreen> {
-  final _origamiService   = OrigamiService();
-  final _progressService  = ProgressService();
-  final _vocabService     = VocabService();
-
+class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
   late Future<List<FoldStep>> _stepsFuture;
-  int            _currentStep = 0;
-  final Set<String> _savedVocabs = {}; // kanji đã lưu trong session
-
-  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   @override
   void initState() {
     super.initState();
-    _stepsFuture = _origamiService.getFoldSteps(widget.model.id);
-    _loadSession();
-    _loadSavedVocabs();
-  }
-
-  Future<void> _loadSession() async {
-    final uid = _uid;
-    if (uid == null) return;
-    final session = await _progressService.getLastSession(uid);
-    if (session != null && session['model_id'] == widget.model.id && mounted) {
-      setState(() => _currentStep = session['current_step'] as int);
-    }
-  }
-
-  Future<void> _loadSavedVocabs() async {
-    final uid = _uid;
-    if (uid == null) return;
-    final words = await _vocabService.getWords(uid);
-    if (mounted) setState(() => _savedVocabs.addAll(words.map((w) => w.kanji)));
-  }
-
-  Future<void> _toggleVocab(VocabRef vocab) async {
-    final uid    = _uid;
-    final isSaved = _savedVocabs.contains(vocab.kanji);
-
-    setState(() {
-      if (isSaved) {
-        _savedVocabs.remove(vocab.kanji);
-      } else {
-        _savedVocabs.add(vocab.kanji);
-      }
-    });
-
-    if (uid != null) {
-      if (isSaved) {
-        await _vocabService.removeWord(userId: uid, kanji: vocab.kanji);
-      } else {
-        await _vocabService.saveWord(
-          userId:    uid,
-          kanji:     vocab.kanji,
-          romaji:    vocab.romaji,
-          meaningVi: vocab.meaningVi,
-          modelId:   widget.model.id,
-        );
-      }
-    }
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(isSaved
-          ? '✖ Đã bỏ lưu "${vocab.kanji}"'
-          : '⭐ Đã lưu "${vocab.kanji}" vào Word Vault'),
-      duration: const Duration(seconds: 1),
-      backgroundColor: Colors.black87,
-    ));
+    _stepsFuture = OrigamiService().getFoldSteps(widget.model.id);
+    Future.microtask(() => ref
+        .read(foldSessionProvider.notifier)
+        .initSession(widget.model.id, FoldFlowType.step));
   }
 
   Future<void> _goNext() async {
-    final uid  = _uid;
-    final next = _currentStep + 1;
-    setState(() => _currentStep = next);
-    if (uid != null) {
-      await _progressService.addXP(uid, AppConstants.xpPerStep);
-      await _progressService.saveSession(
-          userId: uid, modelId: widget.model.id, currentStep: next);
+    final uid = ref.read(currentUidProvider);
+    if (uid != 'guest') {
+      await ref.read(progressNotifierProvider.notifier).addXP(AppConstants.xpPerStep);
     }
+    await ref.read(foldSessionProvider.notifier).advanceStep();
   }
 
   Future<void> _finish() async {
-    final uid   = _uid;
-    await _stepsFuture; // đã load xong rồi
-    if (uid != null) {
-      await _progressService.addXP(uid, AppConstants.xpPerCompleteModel);
-      await _progressService.incrementModelsCompleted(uid);
-      await _progressService.updateStreak(uid);
-      await _progressService.clearSession(userId: uid, modelId: widget.model.id);
-    }
-
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (_) => CompleteScreen(
-        model:       widget.model,
-        paperColor:  widget.paperColor,
-        savedVocabs: _savedVocabs.toList(),
-      ),
-    ));
+    context.pushReplacementNamed(
+      AppRoutes.complete,
+      pathParameters: {'modelId': widget.model.id},
+      queryParameters: {
+        AppRoutes.paperColorQuery: AppRouter.paperColorQuery(widget.paperColor),
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(foldSessionProvider);
+
+    if (!session.isLoaded) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: AppTheme.amber)),
+      );
+    }
+
     return FutureBuilder<List<FoldStep>>(
       future: _stepsFuture,
       builder: (context, snapshot) {
@@ -135,9 +76,10 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
               body: Center(child: Text('${snapshot.error}')));
         }
 
-        final steps  = snapshot.data!;
-        final step   = steps[_currentStep];
-        final isLast = _currentStep == steps.length - 1;
+        final steps = snapshot.data!;
+        final currentStep = session.currentStep.clamp(0, steps.length - 1);
+        final step = steps[currentStep];
+        final isLast = currentStep == steps.length - 1;
 
         return Scaffold(
           appBar: AppBar(
@@ -146,7 +88,7 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Center(
-                  child: Text('Bước ${_currentStep + 1}/${steps.length}',
+                  child: Text('Bước ${currentStep + 1}/${steps.length}',
                       style: const TextStyle(color: Colors.white70, fontSize: 14)),
                 ),
               ),
@@ -154,10 +96,10 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
           ),
           body: Column(children: [
             LinearProgressIndicator(
-              value:      (_currentStep + 1) / steps.length,
+              value: (currentStep + 1) / steps.length,
               backgroundColor: Colors.white12,
               valueColor: const AlwaysStoppedAnimation(AppTheme.amber),
-              minHeight:  4,
+              minHeight: 4,
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -165,7 +107,6 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Ảnh bước gấp ──
                     Container(
                       width: double.infinity,
                       height: 240,
@@ -190,8 +131,6 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    // ── Hướng dẫn ──
                     const Text('HƯỚNG DẪN',
                         style: TextStyle(
                             color: Colors.white54,
@@ -201,8 +140,6 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
                     const SizedBox(height: 8),
                     _buildInstructionText(step),
                     const SizedBox(height: 20),
-
-                    // ── Vocab cards ──
                     if (step.vocabList.isNotEmpty) ...[
                       const Text('TỪ VỰNG TRONG BƯỚC NÀY',
                           style: TextStyle(
@@ -212,8 +149,8 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
                               letterSpacing: 1.2)),
                       const SizedBox(height: 8),
                       ...step.vocabList.map((v) => _VocabCard(
-                            vocab:   v,
-                            isSaved: _savedVocabs.contains(v.kanji),
+                            vocab: v,
+                            isSaved: session.savedVocabs.contains(v.kanji),
                             onToggle: () => _toggleVocab(v),
                           )),
                     ],
@@ -222,19 +159,19 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
                 ),
               ),
             ),
-
-            // ── Navigation bar ──
             Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
               decoration: const BoxDecoration(
                   color: AppTheme.surface,
                   border: Border(top: BorderSide(color: Colors.white12))),
               child: Row(children: [
-                if (_currentStep > 0) ...[
+                if (currentStep > 0) ...[
                   Expanded(
                     flex: 1,
                     child: OutlinedButton(
-                      onPressed: () => setState(() => _currentStep--),
+                      onPressed: () => ref
+                          .read(foldSessionProvider.notifier)
+                          .setStep(currentStep - 1),
                       style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           side: const BorderSide(color: Colors.white24)),
@@ -263,8 +200,26 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
     );
   }
 
+  Future<void> _toggleVocab(VocabRef vocab) async {
+    final saved = await ref.read(foldSessionProvider.notifier).toggleVocab(
+          kanji: vocab.kanji,
+          romaji: vocab.romaji,
+          meaningVi: vocab.meaningVi,
+          modelId: widget.model.id,
+        );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(saved
+          ? '⭐ Đã lưu "${vocab.kanji}" vào Word Vault'
+          : '✖ Đã bỏ lưu "${vocab.kanji}"'),
+      duration: const Duration(seconds: 1),
+      backgroundColor: Colors.black87,
+    ));
+  }
+
   Widget _buildInstructionText(FoldStep step) {
-    final text  = step.instructionVi;
+    final text = step.instructionVi;
     final regex = RegExp(r'\[\[(.+?)\|(.+?)\|(.+?)\]\]');
     final spans = <InlineSpan>[];
     int lastEnd = 0;
@@ -275,8 +230,8 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
             text: text.substring(lastEnd, match.start),
             style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.6)));
       }
-      final kanji   = match.group(1)!;
-      final romaji  = match.group(2)!;
+      final kanji = match.group(1)!;
+      final romaji = match.group(2)!;
       final meaning = match.group(3)!;
 
       spans.add(WidgetSpan(
@@ -311,7 +266,7 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
   }
 
   void _showVocabTooltip(VocabRef vocab) {
-    final isSaved = _savedVocabs.contains(vocab.kanji);
+    final isSaved = ref.read(foldSessionProvider).savedVocabs.contains(vocab.kanji);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surface,
@@ -348,10 +303,9 @@ class _FoldStepScreenState extends State<FoldStepScreen> {
   }
 }
 
-// ── Vocab Card ────────────────────────────────────────────────────────────────
 class _VocabCard extends StatelessWidget {
-  final VocabRef     vocab;
-  final bool         isSaved;
+  final VocabRef vocab;
+  final bool isSaved;
   final VoidCallback onToggle;
 
   const _VocabCard({required this.vocab, required this.isSaved, required this.onToggle});

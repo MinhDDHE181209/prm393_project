@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
+import '../app/routes.dart';
 import '../app/theme.dart';
 import '../app/constants.dart';
 import '../models/origami_model.dart';
 import '../models/fold_step.dart';
-import '../services/progress_service.dart';
 import '../services/origami_service.dart';
+import '../providers/auth_provider.dart';
+import '../providers/fold_session_provider.dart';
+import '../providers/progress_provider.dart';
 import '../providers/vocab_provider.dart';
-import 'home_screen.dart';
 
 class CompleteScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
-  final Color        paperColor;
-  final List<String> savedVocabs; // kanji đã lưu trong session
+  final Color paperColor;
 
   const CompleteScreen({
     super.key,
     required this.model,
     required this.paperColor,
-    required this.savedVocabs,
   });
 
   @override
@@ -40,8 +40,6 @@ class _CompleteScreenState extends ConsumerState<CompleteScreen>
 
   List<VocabRef> _modelVocabs = [];
   List<_QuizQuestion> _questions = [];
-
-  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   @override
   void initState() {
@@ -65,13 +63,13 @@ class _CompleteScreenState extends ConsumerState<CompleteScreen>
 
   // ── Lưu XP + TẤT CẢ từ vựng của bài vào SQLite ─────────────────────────────
   Future<void> _saveProgressAndLoadVocabs() async {
-    final uid = _uid;
-    if (uid == null) return;
+    final uid = ref.read(currentUidProvider);
+    if (uid == 'guest') return;
 
-    // 1. Cộng XP hoàn thành model
-    await ProgressService().addXP(uid, AppConstants.xpPerCompleteModel);
+    final progressNotifier = ref.read(progressNotifierProvider.notifier);
+    await progressNotifier.addXP(AppConstants.xpPerCompleteModel);
+    await progressNotifier.completeModel();
 
-    // 2. Tải tất cả từ vựng trong bài này
     final service = OrigamiService();
     final list = <VocabRef>[];
     try {
@@ -112,7 +110,7 @@ class _CompleteScreenState extends ConsumerState<CompleteScreen>
     }
 
     // 4. Xóa session dở dang vì đã hoàn thành
-    await ProgressService().clearSession(userId: uid, modelId: widget.model.id);
+    await ref.read(foldSessionProvider.notifier).clearSession();
 
     if (mounted) {
       setState(() {
@@ -279,12 +277,7 @@ class _CompleteScreenState extends ConsumerState<CompleteScreen>
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const HomeScreen(initialTab: 0)),
-                (route) => false,
-              );
-            },
+            onPressed: () => context.goNamed(AppRoutes.home),
             icon: const Icon(Icons.home_outlined),
             label: const Text('Về trang chủ',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -296,12 +289,7 @@ class _CompleteScreenState extends ConsumerState<CompleteScreen>
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const HomeScreen(initialTab: 1)),
-                (route) => false,
-              );
-            },
+            onPressed: () => context.goNamed(AppRoutes.wordVault),
             icon: const Icon(Icons.menu_book_outlined, color: AppTheme.teal),
             label: const Text('Xem Word Vault',
                 style: TextStyle(color: AppTheme.teal)),
@@ -388,9 +376,18 @@ class _CompleteScreenState extends ConsumerState<CompleteScreen>
                       final correct = option == q.correctAnswer;
                       setState(() {
                         _selectedAnswer = option;
-                        _isCorrect      = correct;
+                        _isCorrect = correct;
                         if (correct) _correctCount++;
                       });
+                      final quality = correct ? 5 : 1;
+                      ref
+                          .read(vocabNotifierProvider.notifier)
+                          .markReviewed(q.kanji, quality: quality);
+                      if (correct) {
+                        ref
+                            .read(progressNotifierProvider.notifier)
+                            .addXP(AppConstants.xpPerCorrectQuizAnswer);
+                      }
                       Future.delayed(const Duration(seconds: 1), () {
                         if (!mounted) return;
                         setState(() {
