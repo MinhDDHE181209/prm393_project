@@ -58,6 +58,13 @@ flutter:
     - assets/data/seed_collections.json
     - assets/data/seed_models.json
     - assets/data/seed_steps.json
-    - assets/images/
+    - assets/images/crane/
+    - assets/images/turtle/
+    - assets/images/boat/
+    - assets/images/balloon/
+    - assets/images/sakura/
+    - assets/images/rose/
+    - assets/images/samurai_hat/
+    - assets/images/shuriken/
     - assets/gifs/
     - assets/audio/

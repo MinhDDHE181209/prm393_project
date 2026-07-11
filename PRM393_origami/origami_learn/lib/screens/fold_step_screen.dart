@@ -11,6 +11,7 @@ import '../providers/fold_session_provider.dart';
 import '../providers/progress_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/origami_service.dart';
+import '../widgets/vocab_card.dart';
 
 class FoldStepScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
@@ -116,18 +117,39 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
                         border: Border.all(
                             color: widget.paperColor.withValues(alpha: 0.4), width: 2),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.style_outlined,
-                              size: 64,
-                              color: widget.paperColor.withValues(alpha: 0.6)),
-                          const SizedBox(height: 8),
-                          Text('Bước ${step.stepIndex}',
-                              style: TextStyle(
-                                  color: widget.paperColor.withValues(alpha: 0.8),
-                                  fontSize: 16)),
-                        ],
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: step.imageUrl.isNotEmpty
+                            ? Image.asset(
+                                step.imageUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.style_outlined,
+                                        size: 64,
+                                        color: widget.paperColor.withValues(alpha: 0.6)),
+                                    const SizedBox(height: 8),
+                                    Text('Bước ${step.stepIndex}',
+                                        style: TextStyle(
+                                            color: widget.paperColor.withValues(alpha: 0.8),
+                                            fontSize: 16)),
+                                  ],
+                                ),
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.style_outlined,
+                                      size: 64,
+                                      color: widget.paperColor.withValues(alpha: 0.6)),
+                                  const SizedBox(height: 8),
+                                  Text('Bước ${step.stepIndex}',
+                                      style: TextStyle(
+                                          color: widget.paperColor.withValues(alpha: 0.8),
+                                          fontSize: 16)),
+                                ],
+                              ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -148,7 +170,7 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.2)),
                       const SizedBox(height: 8),
-                      ...step.vocabList.map((v) => _VocabCard(
+                      ...step.vocabList.map((v) => VocabCard(
                             vocab: v,
                             isSaved: session.savedVocabs.contains(v.kanji),
                             onToggle: () => _toggleVocab(v),
@@ -299,52 +321,6 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
           const SizedBox(height: 8),
         ]),
       ),
-    );
-  }
-}
-
-class _VocabCard extends StatelessWidget {
-  final VocabRef vocab;
-  final bool isSaved;
-  final VoidCallback onToggle;
-
-  const _VocabCard({required this.vocab, required this.isSaved, required this.onToggle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.black26,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-            color: isSaved
-                ? AppTheme.amber.withValues(alpha: 0.4)
-                : Colors.white12),
-      ),
-      child: Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(vocab.kanji,
-                style: const TextStyle(
-                    color: AppTheme.amber,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold)),
-            Text(vocab.romaji,
-                style: const TextStyle(color: Colors.white54, fontSize: 12)),
-            Text(vocab.meaningVi,
-                style: const TextStyle(color: Colors.white70, fontSize: 13)),
-          ]),
-        ),
-        IconButton(
-          onPressed: onToggle,
-          icon: Icon(
-            isSaved ? Icons.star : Icons.star_border,
-            color: isSaved ? AppTheme.amber : Colors.white38,
-          ),
-        ),
-      ]),
     );
   }
 }

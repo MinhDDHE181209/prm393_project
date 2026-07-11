@@ -7,32 +7,34 @@ class VocabService {
   Future<Database> get _db => DatabaseHelper.instance.database;
 
   Future<void> saveWord({
-    required String userId,
-    required String kanji,
-    required String romaji,
-    required String meaningVi,
-    required String modelId,
-  }) async {
-    final db = await _db;
-    final now = DateTime.now();
-    await db.insert(
-      'saved_words',
-      {
-        'user_id': userId,
-        'kanji': kanji,
-        'romaji': romaji,
-        'meaning_vi': meaningVi,
-        'model_id': modelId,
-        'needs_review': 1,
-        'saved_at': now.millisecondsSinceEpoch,
-        'repetitions': 0,
-        'ease_factor': 2.5,
-        'interval_days': 0,
-        'next_review_at': now.millisecondsSinceEpoch,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
+  required String userId,
+  required String kanji,
+  required String romaji,
+  required String meaningVi,
+  required String modelId,
+}) async {
+  final db = await _db;
+  final now = DateTime.now();
+  await db.insert(
+    'saved_words',
+    {
+      'user_id': userId,
+      'kanji': kanji,
+      'romaji': romaji,
+      'meaning_vi': meaningVi,
+      'model_id': modelId,
+      'needs_review': 1,
+      'saved_at': now.millisecondsSinceEpoch,
+      'repetitions': 0,
+      'ease_factor': 2.5,
+      'interval_days': 0,
+      'next_review_at': now.millisecondsSinceEpoch,
+      'updated_at': now.millisecondsSinceEpoch,   // ✅ MỚI
+      'synced_at': null,                          // ✅ MỚI: chưa sync
+    },
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
 
   Future<void> removeWord({required String userId, required String kanji}) async {
     final db = await _db;
@@ -107,6 +109,8 @@ class VocabService {
         'interval_days': result.interval,
         'next_review_at': result.nextReviewAt.millisecondsSinceEpoch,
         'needs_review': needsReview,
+        'updated_at': DateTime.now().millisecondsSinceEpoch, // ✅ MỚI
+
       },
       where: 'user_id = ? AND kanji = ?',
       whereArgs: [userId, kanji],
@@ -119,18 +123,19 @@ class VocabService {
   Future<void> markNeedsReview({required String userId, required String kanji}) async {
     final db = await _db;
     final now = DateTime.now();
-    await db.update(
-      'saved_words',
-      {
-        'needs_review': 1,
-        'repetitions': 0,
-        'interval_days': 0,
-        'ease_factor': 2.5,
-        'next_review_at': now.millisecondsSinceEpoch,
-      },
-      where: 'user_id = ? AND kanji = ?',
-      whereArgs: [userId, kanji],
-    );
+   await db.update(
+  'saved_words',
+  {
+    'needs_review': 1,
+    'repetitions': 0,
+    'interval_days': 0,
+    'ease_factor': 2.5,
+    'next_review_at': now.millisecondsSinceEpoch,
+    'updated_at': now.millisecondsSinceEpoch, // ✅ MỚI
+  },
+  where: 'user_id = ? AND kanji = ?',
+  whereArgs: [userId, kanji],
+);
   }
 
   Future<int> countWords(String userId) async {
@@ -139,4 +144,58 @@ class VocabService {
         'SELECT COUNT(*) as cnt FROM saved_words WHERE user_id = ?', [userId]);
     return (result.first['cnt'] as int?) ?? 0;
   }
+  /// Lấy các từ CHƯA sync hoặc đã sửa sau lần sync gần nhất.
+Future<List<VocabWord>> getUnsyncedWords(String userId) async {
+  final db = await _db;
+  final rows = await db.query(
+    'saved_words',
+    where: 'user_id = ? AND (synced_at IS NULL OR updated_at > synced_at)',
+    whereArgs: [userId],
+  );
+  return rows.map(VocabWord.fromMap).toList();
+}
+
+/// Đánh dấu các từ đã sync xong (gọi sau khi push lên Firestore thành công).
+Future<void> markWordsSynced(String userId, List<String> kanjiList) async {
+  if (kanjiList.isEmpty) return;
+  final db = await _db;
+  final now = DateTime.now().millisecondsSinceEpoch;
+  final batch = db.batch();
+  for (final kanji in kanjiList) {
+    batch.update(
+      'saved_words',
+      {'synced_at': now},
+      where: 'user_id = ? AND kanji = ?',
+      whereArgs: [userId, kanji],
+    );
+  }
+  await batch.commit(noResult: true);
+}
+
+/// Upsert 1 từ từ Firestore về local (dùng khi Pull), theo updated_at mới hơn thì mới ghi.
+Future<void> upsertFromCloud(VocabWord word) async {
+  final db = await _db;
+  final existing = await db.query(
+    'saved_words',
+    where: 'user_id = ? AND kanji = ?',
+    whereArgs: [word.userId, word.kanji],
+    limit: 1,
+  );
+
+  if (existing.isEmpty) {
+    await db.insert('saved_words', word.toMap()..['synced_at'] = word.updatedAt.millisecondsSinceEpoch);
+    return;
+  }
+
+  final localUpdatedAt = existing.first['updated_at'] as int? ?? 0;
+  if (word.updatedAt.millisecondsSinceEpoch > localUpdatedAt) {
+    await db.update(
+      'saved_words',
+      word.toMap()..['synced_at'] = word.updatedAt.millisecondsSinceEpoch,
+      where: 'user_id = ? AND kanji = ?',
+      whereArgs: [word.userId, word.kanji],
+    );
+  }
+  // Nếu local mới hơn cloud → không ghi đè, giữ nguyên local (sẽ được Push ở lượt sau)
+}
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:origami_learn/app/constants.dart';
 import 'package:origami_learn/app/theme.dart';
-import 'package:origami_learn/screens/auth_screen.dart';
 import 'package:go_router/go_router.dart';
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});

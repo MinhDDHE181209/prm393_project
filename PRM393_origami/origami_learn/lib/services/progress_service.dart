@@ -1,5 +1,4 @@
 import 'package:sqflite/sqflite.dart';
-import '../app/constants.dart';
 import '../models/user_progress.dart';
 import 'database_helper.dart';
 

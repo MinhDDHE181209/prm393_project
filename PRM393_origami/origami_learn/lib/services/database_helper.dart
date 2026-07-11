@@ -24,25 +24,26 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> _onCreate(Database db, int version) async {
-    // ✅ FIX: column names phải khớp với VocabWord.fromMap() / toMap()
-    await db.execute('''
-      CREATE TABLE saved_words (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id      TEXT    NOT NULL,
-        kanji        TEXT    NOT NULL,
-        romaji       TEXT    NOT NULL,
-        meaning_vi   TEXT    NOT NULL,
-        model_id     TEXT    NOT NULL,
-        needs_review INTEGER NOT NULL DEFAULT 1,
-        saved_at     INTEGER NOT NULL,
-        repetitions  INTEGER NOT NULL DEFAULT 0,
-        ease_factor  REAL    NOT NULL DEFAULT 2.5,
-        interval_days INTEGER NOT NULL DEFAULT 0,
-        next_review_at INTEGER NOT NULL,
-        UNIQUE(user_id, kanji)
-      )
-    ''');
+ Future<void> _onCreate(Database db, int version) async {
+  await db.execute('''
+    CREATE TABLE saved_words (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id      TEXT    NOT NULL,
+      kanji        TEXT    NOT NULL,
+      romaji       TEXT    NOT NULL,
+      meaning_vi   TEXT    NOT NULL,
+      model_id     TEXT    NOT NULL,
+      needs_review INTEGER NOT NULL DEFAULT 1,
+      saved_at     INTEGER NOT NULL,
+      repetitions  INTEGER NOT NULL DEFAULT 0,
+      ease_factor  REAL    NOT NULL DEFAULT 2.5,
+      interval_days INTEGER NOT NULL DEFAULT 0,
+      next_review_at INTEGER NOT NULL,
+      updated_at   INTEGER NOT NULL DEFAULT 0,
+      synced_at    INTEGER,
+      UNIQUE(user_id, kanji)
+    )
+  ''');
 
     // ✅ FIX: column names khớp với UserProgress.fromMap() / toMap()
     // Dùng snake_case nhất quán, toMap() sẽ map sang đây
@@ -80,24 +81,33 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute(
-          'ALTER TABLE saved_words ADD COLUMN repetitions INTEGER NOT NULL DEFAULT 0');
-      await db.execute(
-          'ALTER TABLE saved_words ADD COLUMN ease_factor REAL NOT NULL DEFAULT 2.5');
-      await db.execute(
-          'ALTER TABLE saved_words ADD COLUMN interval_days INTEGER NOT NULL DEFAULT 0');
-      await db.execute(
-          'ALTER TABLE saved_words ADD COLUMN next_review_at INTEGER');
-      // Backfill: từ cần ôn → due ngay; đã thuộc → lùi 30 ngày
-      await db.execute('''
-        UPDATE saved_words
-        SET next_review_at = CASE
-          WHEN needs_review = 1 THEN saved_at
-          ELSE saved_at + ${30 * 24 * 60 * 60 * 1000}
-        END
-        WHERE next_review_at IS NULL
-      ''');
-    }
+  if (oldVersion < 2) {
+    await db.execute(
+        'ALTER TABLE saved_words ADD COLUMN repetitions INTEGER NOT NULL DEFAULT 0');
+    await db.execute(
+        'ALTER TABLE saved_words ADD COLUMN ease_factor REAL NOT NULL DEFAULT 2.5');
+    await db.execute(
+        'ALTER TABLE saved_words ADD COLUMN interval_days INTEGER NOT NULL DEFAULT 0');
+    await db.execute(
+        'ALTER TABLE saved_words ADD COLUMN next_review_at INTEGER');
+    await db.execute('''
+      UPDATE saved_words
+      SET next_review_at = CASE
+        WHEN needs_review = 1 THEN saved_at
+        ELSE saved_at + ${30 * 24 * 60 * 60 * 1000}
+      END
+      WHERE next_review_at IS NULL
+    ''');
   }
+
+  // ✅ MỚI: thêm cột theo dõi đồng bộ cloud
+  if (oldVersion < 3) {
+    await db.execute(
+        'ALTER TABLE saved_words ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0');
+    await db.execute(
+        'ALTER TABLE saved_words ADD COLUMN synced_at INTEGER');
+    // Backfill: coi như updated_at = saved_at cho dữ liệu cũ
+    await db.execute('UPDATE saved_words SET updated_at = saved_at WHERE updated_at = 0');
+  }
+}
 }

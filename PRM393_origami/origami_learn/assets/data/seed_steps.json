@@ -1,175 +1,824 @@
-{ 
+{
   "model_crane": [
     {
       "stepIndex": 1,
-      "imageUrl": "",
+      "imageUrl": "assets/images/crane/step_1.png",
       "instructionVi": "Đặt tờ giấy theo hình vuông, mặt màu úp xuống. Thực hiện [[山折り|Yamaori|Nếp gấp lên]] theo đường chéo.",
       "vocabList": [
-        { "kanji": "山折り", "romaji": "Yamaori", "meaningVi": "Nếp gấp lên (nếp núi)" }
+        {
+          "kanji": "山折り",
+          "romaji": "Yamaori",
+          "meaningVi": "Nếp gấp lên (nếp núi)"
+        }
       ]
     },
     {
       "stepIndex": 2,
-      "imageUrl": "",
+      "imageUrl": "assets/images/crane/step_2.png",
       "instructionVi": "Lật giấy lại, thực hiện [[谷折り|Tanioiri|Nếp gấp xuống]] theo đường chéo còn lại.",
       "vocabList": [
-        { "kanji": "谷折り", "romaji": "Tanioiri", "meaningVi": "Nếp gấp xuống (nếp thung lũng)" }
+        {
+          "kanji": "谷折り",
+          "romaji": "Tanioiri",
+          "meaningVi": "Nếp gấp xuống (nếp thung lũng)"
+        }
       ]
     },
     {
       "stepIndex": 3,
-      "imageUrl": "",
+      "imageUrl": "assets/images/crane/step_3.png",
       "instructionVi": "Gấp tờ giấy thành hình [[正方形|Seihōkei|Hình vuông]] nhỏ hơn.",
       "vocabList": [
-        { "kanji": "正方形", "romaji": "Seihōkei", "meaningVi": "Hình vuông" }
+        {
+          "kanji": "正方形",
+          "romaji": "Seihōkei",
+          "meaningVi": "Hình vuông"
+        }
       ]
     },
     {
       "stepIndex": 4,
-      "imageUrl": "",
+      "imageUrl": "assets/images/crane/step_4.png",
       "instructionVi": "Mở các lớp giấy ra và ép phẳng thành hình thoi — đây là [[基本形|Kihonkei|Hình cơ bản]].",
       "vocabList": [
-        { "kanji": "基本形", "romaji": "Kihonkei", "meaningVi": "Hình cơ bản (base form)" }
+        {
+          "kanji": "基本形",
+          "romaji": "Kihonkei",
+          "meaningVi": "Hình cơ bản (base form)"
+        }
       ]
     },
     {
       "stepIndex": 5,
-      "imageUrl": "",
+      "imageUrl": "assets/images/crane/step_5.png",
       "instructionVi": "Gấp hai cạnh bên vào đường trung tâm theo kiểu [[内折り|Uchioiri|Gấp vào trong]].",
       "vocabList": [
-        { "kanji": "内折り", "romaji": "Uchioiri", "meaningVi": "Gấp vào trong" }
+        {
+          "kanji": "内折り",
+          "romaji": "Uchioiri",
+          "meaningVi": "Gấp vào trong"
+        }
       ]
     },
     {
       "stepIndex": 6,
-      "imageUrl": "",
+      "imageUrl": "assets/images/crane/step_6.png",
       "instructionVi": "Lật lại và lặp lại bước 5 cho mặt còn lại.",
       "vocabList": []
     },
     {
       "stepIndex": 7,
-      "imageUrl": "",
+      "imageUrl": "assets/images/crane/step_7.png",
       "instructionVi": "Gấp phần đầu nhọn lên trên để tạo [[首|Kubi|Cổ]] và [[嘴|Kuchibashi|Mỏ]] của hạc.",
       "vocabList": [
-        { "kanji": "首", "romaji": "Kubi", "meaningVi": "Cổ" },
-        { "kanji": "嘴", "romaji": "Kuchibashi", "meaningVi": "Mỏ chim" }
+        {
+          "kanji": "首",
+          "romaji": "Kubi",
+          "meaningVi": "Cổ"
+        },
+        {
+          "kanji": "嘴",
+          "romaji": "Kuchibashi",
+          "meaningVi": "Mỏ chim"
+        }
       ]
     },
     {
       "stepIndex": 8,
-      "imageUrl": "",
+      "imageUrl": "assets/images/crane/step_8.png",
       "instructionVi": "Thổi nhẹ vào lỗ dưới thân để phồng [[翼|Tsubasa|Cánh]] lên. Con hạc đã hoàn thành!",
       "vocabList": [
-        { "kanji": "翼", "romaji": "Tsubasa", "meaningVi": "Cánh" }
-      ]
-    }
-  ]
- ,
-"model_kusudama": {
-  "modules": [
-    {
-      "moduleIndex": 1,
-      "moduleTitle": "Gấp cánh hoa",
-      "moduleTitleJP": "花びら",
-      "steps": [
         {
-          "stepIndex": 1,
-          "imageUrl": "",
-          "instructionVi": "Cắt giấy thành hình vuông 10x10cm. Gấp đôi theo đường [[対角線|Taikakusen|Đường chéo]].",
-          "vocabList": [
-            { "kanji": "対角線", "romaji": "Taikakusen", "meaningVi": "Đường chéo" }
-          ]
-        },
-        {
-          "stepIndex": 2,
-          "imageUrl": "",
-          "instructionVi": "Gấp 2 cạnh vào giữa theo kiểu [[風船折り|Fūsenori|Gấp bong bóng]].",
-          "vocabList": [
-            { "kanji": "風船折り", "romaji": "Fūsenori", "meaningVi": "Gấp bong bóng" }
-          ]
-        },
-        {
-          "stepIndex": 3,
-          "imageUrl": "",
-          "instructionVi": "Dán 2 mép lại bằng keo để tạo hình [[花びら|Hanabira|Cánh hoa]] hoàn chỉnh.",
-          "vocabList": [
-            { "kanji": "花びら", "romaji": "Hanabira", "meaningVi": "Cánh hoa" }
-          ]
-        }
-      ]
-    },
-    {
-      "moduleIndex": 2,
-      "moduleTitle": "Hoàn thiện cánh hoa",
-      "moduleTitleJP": "完成",
-      "steps": [
-        {
-          "stepIndex": 1,
-          "imageUrl": "",
-          "instructionVi": "Lặp lại module 1 để tạo đủ [[六つ|Muttsu|Sáu]] cánh hoa.",
-          "vocabList": [
-            { "kanji": "六つ", "romaji": "Muttsu", "meaningVi": "Sáu (cái)" }
-          ]
-        },
-        {
-          "stepIndex": 2,
-          "imageUrl": "",
-          "instructionVi": "Kiểm tra các [[角|Kado|Góc]] đã thẳng đều chưa trước khi lắp ráp.",
-          "vocabList": [
-            { "kanji": "角", "romaji": "Kado", "meaningVi": "Góc" }
-          ]
-        }
-      ]
-    },
-    {
-      "moduleIndex": 3,
-      "moduleTitle": "Lắp ráp bóng hoa",
-      "moduleTitleJP": "組み立て",
-      "steps": [
-        {
-          "stepIndex": 1,
-          "imageUrl": "",
-          "instructionVi": "Dán các cánh hoa lại với nhau theo hình [[円形|Enkei|Hình tròn]].",
-          "vocabList": [
-            { "kanji": "円形", "romaji": "Enkei", "meaningVi": "Hình tròn" }
-          ]
-        },
-        {
-          "stepIndex": 2,
-          "imageUrl": "",
-          "instructionVi": "Dùng dây để [[吊る|Tsuru|Treo]] bóng hoa lên.",
-          "vocabList": [
-            { "kanji": "吊る", "romaji": "Tsuru", "meaningVi": "Treo lên" }
-          ]
+          "kanji": "翼",
+          "romaji": "Tsubasa",
+          "meaningVi": "Cánh"
         }
       ]
     }
   ],
-  "assembly": [
+  "model_boat": [
     {
       "stepIndex": 1,
-      "imageUrl": "",
-      "instructionVi": "Xếp 6 cánh hoa thành [[球形|Kyūkei|Hình cầu]], mỗi cánh cách nhau đều.",
+      "imageUrl": "assets/images/boat/step_1.png",
+      "instructionVi": "Gấp giấy hình chữ nhật theo chiều dọc rồi mở ra, xoay ngang và gấp đôi theo chiều ngang, mở ra tiếp — tạo 2 đường [[中心線|Chūshinsen|Đường trung tâm]] vuông góc làm mốc cho các bước sau.",
       "vocabList": [
-        { "kanji": "球形", "romaji": "Kyūkei", "meaningVi": "Hình cầu" }
+        {
+          "kanji": "中心線",
+          "romaji": "Chūshinsen",
+          "meaningVi": "Đường trung tâm"
+        }
       ]
     },
     {
       "stepIndex": 2,
-      "imageUrl": "",
-      "instructionVi": "Dán từng cánh lại, kiểm tra [[対称|Taishou|Đối xứng]] hai bên.",
+      "imageUrl": "assets/images/boat/step_2.png",
+      "instructionVi": "Lật giấy sao cho mép mở hướng về phía bạn, gấp 2 góc trên vào đường trung tâm, chừa lại một khoảng trống nhỏ ở mép dưới để tạo 2 hình [[三角形|Sankakukei|Tam giác]].",
       "vocabList": [
-        { "kanji": "対称", "romaji": "Taishou", "meaningVi": "Đối xứng" }
+        {
+          "kanji": "三角形",
+          "romaji": "Sankakukei",
+          "meaningVi": "Hình tam giác"
+        }
       ]
     },
     {
       "stepIndex": 3,
-      "imageUrl": "",
-      "instructionVi": "Buộc dây vào đỉnh. Bóng hoa [[完成|Kansei|Hoàn thành]] rồi!",
+      "imageUrl": "assets/images/boat/step_3.png",
+      "instructionVi": "Gấp mép dưới của mặt trước lên, che kín đáy 2 tam giác vừa tạo, miết chặt nếp gấp.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 4,
+      "imageUrl": "assets/images/boat/step_4.png",
+      "instructionVi": "Lật giấy lại, gấp mép dưới của mặt sau lên tương tự để hoàn thành [[帽子折り|Bōshi ori|Hình gấp kiểu mũ]].",
       "vocabList": [
-        { "kanji": "完成", "romaji": "Kansei", "meaningVi": "Hoàn thành" }
+        {
+          "kanji": "帽子折り",
+          "romaji": "Bōshi ori",
+          "meaningVi": "Hình gấp kiểu mũ"
+        }
+      ]
+    },
+    {
+      "stepIndex": 5,
+      "imageUrl": "assets/images/boat/step_5.png",
+      "instructionVi": "Gấp 2 góc dưới còn thừa ra vào trong, trùm qua cạnh tam giác ở cả 2 mặt để giữ hình mũ chắc chắn.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 6,
+      "imageUrl": "assets/images/boat/step_6.png",
+      "instructionVi": "Xoay hình mũ 45 độ, dùng tay mở phần đáy và kéo nhẹ 2 bên ra xa nhau đến khi bật thành hình [[菱形|Hishigata|Hình thoi]].",
+      "vocabList": [
+        {
+          "kanji": "菱形",
+          "romaji": "Hishigata",
+          "meaningVi": "Hình thoi"
+        }
+      ]
+    },
+    {
+      "stepIndex": 7,
+      "imageUrl": "assets/images/boat/step_7.png",
+      "instructionVi": "Gấp đỉnh dưới của hình thoi lên trùng với đỉnh trên, thực hiện tương tự ở cả mặt trước và mặt sau.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 8,
+      "imageUrl": "assets/images/boat/step_8.png",
+      "instructionVi": "Lặp lại động tác mở đáy và kéo bật như bước 6 một lần nữa để tạo thành hình vuông nhỏ hơn.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 9,
+      "imageUrl": "assets/images/boat/step_9.png",
+      "instructionVi": "Kéo nhẹ 2 bên hình thoi ra như cánh hoa để lộ khoang thuyền, miết đáy cho thuyền đứng vững — chiếc [[船|Fune|Thuyền]] đã hoàn thành! Phần tam giác dựng thẳng ở giữa là [[帆柱|Hobashira|Cột buồm]].",
+      "vocabList": [
+        {
+          "kanji": "船",
+          "romaji": "Fune",
+          "meaningVi": "Thuyền"
+        },
+        {
+          "kanji": "帆柱",
+          "romaji": "Hobashira",
+          "meaningVi": "Cột buồm"
+        }
       ]
     }
-  ]
-}
+  ],
+  "model_samurai_hat": [
+    {
+      "stepIndex": 1,
+      "imageUrl": "assets/images/samurai_hat/step_1.png",
+      "instructionVi": "Gấp đôi giấy hình vuông theo chiều dọc, tạo nếp giữa rồi mở ra.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 2,
+      "imageUrl": "assets/images/samurai_hat/step_2.png",
+      "instructionVi": "Gấp đôi giấy theo chiều ngang, từ mép trên xuống mép dưới.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 3,
+      "imageUrl": "assets/images/samurai_hat/step_3.png",
+      "instructionVi": "Gấp 2 góc trái và phải xuống chạm điểm dưới cùng, tạo thành hình [[三角形|Sankakukei|Tam giác]] cân đối 2 bên.",
+      "vocabList": [
+        {
+          "kanji": "三角形",
+          "romaji": "Sankakukei",
+          "meaningVi": "Hình tam giác"
+        }
+      ]
+    },
+    {
+      "stepIndex": 4,
+      "imageUrl": "assets/images/samurai_hat/step_4.png",
+      "instructionVi": "Gấp 2 góc đó lên lại, chạm vào điểm trên cùng.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 5,
+      "imageUrl": "assets/images/samurai_hat/step_5.png",
+      "instructionVi": "Gấp góc trên-phải sang bên phải và góc trên-trái sang bên trái, tạo thành 2 phần nhô ra giống [[角|Tsuno|Sừng]] của mũ.",
+      "vocabList": [
+        {
+          "kanji": "角",
+          "romaji": "Tsuno",
+          "meaningVi": "Sừng, góc nhọn trang trí"
+        }
+      ]
+    },
+    {
+      "stepIndex": 6,
+      "imageUrl": "assets/images/samurai_hat/step_6.png",
+      "instructionVi": "Gấp điểm dưới của lớp giấy trên cùng lên theo nếp đã đánh dấu, sau đó gấp nó xuống trở lại vị trí cũ.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 7,
+      "imageUrl": "assets/images/samurai_hat/step_7.png",
+      "instructionVi": "Gấp 2 lớp giấy trên cùng lên theo cạnh vừa tạo ở bước trước.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 8,
+      "imageUrl": "assets/images/samurai_hat/step_8.png",
+      "instructionVi": "Gấp tam giác nhỏ ở đáy lên rồi mở ra ngay — chỉ để tạo dấu nếp gấp làm mốc.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 9,
+      "imageUrl": "assets/images/samurai_hat/step_9.png",
+      "instructionVi": "Lặp lại thao tác gấp tam giác đáy như bước 8, nhưng lần này nhét đầu tam giác vào túi giấy phía trên để khoá chặt cấu trúc.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 10,
+      "imageUrl": "assets/images/samurai_hat/step_10.png",
+      "instructionVi": "Xoay giấy 90 độ, mở nhẹ phần đáy rồi ấn đỉnh trên xuống chạm đỉnh dưới để mũ bung thành hình khối 3D — chiếc [[兜|Kabuto|Mũ Samurai]] đã hoàn thành!",
+      "vocabList": [
+        {
+          "kanji": "兜",
+          "romaji": "Kabuto",
+          "meaningVi": "Mũ/Mũ giáp Samurai"
+        }
+      ]
+    }
+  ],
+  "model_sakura": [
+    {
+      "stepIndex": 1,
+      "imageUrl": "assets/images/sakura/step_1.png",
+      "instructionVi": "Dùng giấy hình vuông nhỏ (khoảng 7-10cm), gấp đôi theo chiều ngang thành hình chữ nhật.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 2,
+      "imageUrl": "assets/images/sakura/step_2.png",
+      "instructionVi": "Gấp mép phải vào khoảng 1/3 chiều dài, sau đó gấp mép trái đè lên trên — tạo thành dải giấy hẹp nhiều lớp.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 3,
+      "imageUrl": "assets/images/sakura/step_3.png",
+      "instructionVi": "Gấp đôi dải giấy theo chiều dọc một lần nữa.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 4,
+      "imageUrl": "assets/images/sakura/step_4.png",
+      "instructionVi": "⚠️ Bước này cần dùng kéo: cắt qua tất cả các lớp giấy theo đường vòm cong, chừa lại 1 khe nhỏ ở đỉnh giữa để tạo hình dáng [[花びら|Hanabira|Cánh hoa]].",
+      "vocabList": [
+        {
+          "kanji": "花びら",
+          "romaji": "Hanabira",
+          "meaningVi": "Cánh hoa"
+        }
+      ]
+    },
+    {
+      "stepIndex": 5,
+      "imageUrl": "assets/images/sakura/step_5.png",
+      "instructionVi": "Mở giấy ra nhẹ nhàng để lộ hình hoa 5 cánh đối xứng.",
+      "vocabList": []
+    },
+    {
+      "stepIndex": 6,
+      "imageUrl": "assets/images/sakura/step_6.png",
+      "instructionVi": "Dùng đầu ngón tay hoặc thân bút chì cong nhẹ từng cánh hoa vào trong, ấn nhẹ phần giữa để tạo độ phồng tự nhiên — hoa [[桜|Sakura|Anh đào]] đã hoàn thành!",
+      "vocabList": [
+        {
+          "kanji": "桜",
+          "romaji": "Sakura",
+          "meaningVi": "Hoa anh đào"
+        }
+      ]
+    }
+  ],
+  "model_shuriken": {
+    "modules": [
+      {
+        "moduleIndex": 1,
+        "moduleTitle": "Module A (cánh 1)",
+        "moduleTitleJP": "モジュールA",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/shuriken/step_1.png",
+            "instructionVi": "Cắt giấy vuông làm đôi để có 1 hình chữ nhật. Gấp đôi theo chiều ngang, tạo nếp giữa rồi mở ra.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 2,
+            "imageUrl": "assets/images/shuriken/step_2.png",
+            "instructionVi": "Gấp đôi tiếp theo chiều dọc (theo chiều dài) để tạo dải giấy hẹp hơn.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 3,
+            "imageUrl": "assets/images/shuriken/step_3.png",
+            "instructionVi": "Gấp góc dưới-trái lên trên và góc trên-phải xuống dưới, tạo thành hình chữ [[Z字折り|Zetto ori|Gấp hình chữ Z]].",
+            "vocabList": [
+              {
+                "kanji": "Z字折り",
+                "romaji": "Zetto ori",
+                "meaningVi": "Gấp hình chữ Z"
+              }
+            ]
+          },
+          {
+            "stepIndex": 4,
+            "imageUrl": "assets/images/shuriken/step_4.png",
+            "instructionVi": "Gấp nửa trái vào trong và nửa phải ra ngoài để khoá hình dạng — hoàn thành Module A.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 2,
+        "moduleTitle": "Module B (cánh 2, đối xứng gương)",
+        "moduleTitleJP": "モジュールB",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/shuriken/step_5.png",
+            "instructionVi": "Dùng hình chữ nhật còn lại, gấp đôi theo chiều ngang, tạo nếp giữa rồi mở ra — giống bước 1 của Module A.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 2,
+            "imageUrl": "assets/images/shuriken/step_6.png",
+            "instructionVi": "Gấp đôi theo chiều dọc để tạo dải giấy hẹp — giống bước 2 của Module A.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 3,
+            "imageUrl": "assets/images/shuriken/step_7.png",
+            "instructionVi": "Gấp góc trên-trái xuống dưới và góc dưới-phải lên trên — chú ý đây là hướng NGƯỢC với Module A để tạo bản đối xứng gương.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 4,
+            "imageUrl": "assets/images/shuriken/step_8.png",
+            "instructionVi": "Gấp nửa phải vào trong và nửa trái ra ngoài (ngược Module A) — hoàn thành Module B.",
+            "vocabList": []
+          }
+        ]
+      }
+    ],
+    "assembly": [
+      {
+        "stepIndex": 1,
+        "imageUrl": "assets/images/shuriken/step_9.png",
+        "instructionVi": "Đặt Module A nằm ngang, đặt Module B nằm dọc đè lên trên, đan chéo vuông góc để tạo hình chữ thập.",
+        "vocabList": []
+      },
+      {
+        "stepIndex": 2,
+        "imageUrl": "assets/images/shuriken/step_9.png",
+        "instructionVi": "Lần lượt gấp 4 đầu nhọn của module này nhét vào túi giấy được tạo sẵn ở module kia, xoay đều cả 4 góc theo cùng 1 chiều.",
+        "vocabList": []
+      },
+      {
+        "stepIndex": 3,
+        "imageUrl": "assets/images/shuriken/step_9.png",
+        "instructionVi": "Ấn phẳng phần giữa để 2 module khoá chặt vào nhau, không cần keo dán — [[手裏剣|Shuriken|Suriken]] 4 cánh đã hoàn thành!",
+        "vocabList": [
+          {
+            "kanji": "手裏剣",
+            "romaji": "Shuriken",
+            "meaningVi": "Phi tiêu ẩn (đồ chơi giấy, không phải vũ khí thật)"
+          }
+        ]
+      }
+    ]
+  },
+  "model_turtle": {
+    "modules": [
+      {
+        "moduleIndex": 1,
+        "moduleTitle": "Mảnh vỏ 1",
+        "moduleTitleJP": "甲羅パーツ1",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/turtle/step_1.png",
+            "instructionVi": "Gấp đôi giấy hình vuông theo 1 trục, mở ra để tạo nếp giữa.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 2,
+            "imageUrl": "assets/images/turtle/step_2.png",
+            "instructionVi": "Gấp mép trên và mép dưới vào sát đường giữa.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 3,
+            "imageUrl": "assets/images/turtle/step_3.png",
+            "instructionVi": "Mở lại 1 đầu, gấp chéo góc tạo hình tam giác nhỏ; lặp lại đối xứng ở đầu còn lại.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 4,
+            "imageUrl": "assets/images/turtle/step_4.png",
+            "instructionVi": "Gấp chéo toàn bộ dải giấy theo đường chéo chính, nhét đầu nhọn vào để khoá thành hình có 2 túi giấy — hoàn thành 1 mảnh vỏ.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 2,
+        "moduleTitle": "Mảnh vỏ 2",
+        "moduleTitleJP": "甲羅パーツ2",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/turtle/step_5.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Mảnh vỏ 1 để tạo thêm 1 mảnh.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 3,
+        "moduleTitle": "Mảnh vỏ 3",
+        "moduleTitleJP": "甲羅パーツ3",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/turtle/step_6.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Mảnh vỏ 1 để tạo thêm 1 mảnh.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 4,
+        "moduleTitle": "Mảnh vỏ 4",
+        "moduleTitleJP": "甲羅パーツ4",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/turtle/step_7.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Mảnh vỏ 1 để tạo thêm 1 mảnh.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 5,
+        "moduleTitle": "Đầu và đuôi",
+        "moduleTitleJP": "頭と尻尾",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/turtle/step_8.png",
+            "instructionVi": "Dùng 1 mảnh giấy vuông nhỏ, gấp chéo thành tam giác rồi gấp đôi tiếp thành tam giác nhỏ hơn.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 2,
+            "imageUrl": "assets/images/turtle/step_9.png",
+            "instructionVi": "Gấp nhọn 1 góc để tạo [[頭|Atama|Đầu]], góc đối diện gấp nhỏ hơn để tạo [[尻尾|Shippo|Đuôi]].",
+            "vocabList": [
+              {
+                "kanji": "頭",
+                "romaji": "Atama",
+                "meaningVi": "Đầu"
+              },
+              {
+                "kanji": "尻尾",
+                "romaji": "Shippo",
+                "meaningVi": "Đuôi"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "moduleIndex": 6,
+        "moduleTitle": "4 chân",
+        "moduleTitleJP": "四本の足",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/turtle/step_10.png",
+            "instructionVi": "Gấp giấy hình chữ nhật thành 4 dải nhỏ đều nhau kiểu gấp quạt.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 2,
+            "imageUrl": "assets/images/turtle/step_11.png",
+            "instructionVi": "Gấp nhọn đầu mỗi dải để tạo thành 4 chân rùa.",
+            "vocabList": []
+          }
+        ]
+      }
+    ],
+    "assembly": [
+      {
+        "stepIndex": 1,
+        "imageUrl": "assets/images/turtle/step_11.png",
+        "instructionVi": "Lắp 4 mảnh vỏ vào nhau qua các túi giấy, xoay vòng tròn để ghép thành [[甲羅|Kōra|Mai rùa]] khép kín.",
+        "vocabList": [
+          {
+            "kanji": "甲羅",
+            "romaji": "Kōra",
+            "meaningVi": "Mai rùa"
+          }
+        ]
+      },
+      {
+        "stepIndex": 2,
+        "imageUrl": "assets/images/turtle/step_11.png",
+        "instructionVi": "Gắn phần đầu-đuôi vào 1 cạnh của mai rùa.",
+        "vocabList": []
+      },
+      {
+        "stepIndex": 3,
+        "imageUrl": "assets/images/turtle/step_11.png",
+        "instructionVi": "Gắn 4 chân vào 4 góc còn lại của mai rùa — [[亀|Kame|Con rùa]] module đã hoàn thành!",
+        "vocabList": [
+          {
+            "kanji": "亀",
+            "romaji": "Kame",
+            "meaningVi": "Con rùa"
+          }
+        ]
+      }
+    ]
+  },
+  "model_rose": {
+    "modules": [
+      {
+        "moduleIndex": 1,
+        "moduleTitle": "Cánh hoa 1",
+        "moduleTitleJP": "花びらパーツ1",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/rose/step_1.png",
+            "instructionVi": "Gấp đôi giấy vuông nhỏ theo trục dọc, mở ra để tạo nếp giữa.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 2,
+            "imageUrl": "assets/images/rose/step_2.png",
+            "instructionVi": "Gấp 2 góc trên vào đường giữa, tạo hình mái nhà.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 3,
+            "imageUrl": "assets/images/rose/step_3.png",
+            "instructionVi": "Gấp phần dưới lên theo đường chéo để tạo hình cánh hoa cong nhẹ.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 4,
+            "imageUrl": "assets/images/rose/step_4.png",
+            "instructionVi": "Gấp mép cuối để tạo phần khoá, giúp cánh hoa gài được vào cánh bên cạnh — hoàn thành Cánh hoa 1.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 2,
+        "moduleTitle": "Cánh hoa 2",
+        "moduleTitleJP": "花びらパーツ2",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/rose/step_4.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Cánh hoa 1.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 3,
+        "moduleTitle": "Cánh hoa 3",
+        "moduleTitleJP": "花びらパーツ3",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/rose/step_4.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Cánh hoa 1.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 4,
+        "moduleTitle": "Cánh hoa 4",
+        "moduleTitleJP": "花びらパーツ4",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/rose/step_4.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Cánh hoa 1.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 5,
+        "moduleTitle": "Cánh hoa 5",
+        "moduleTitleJP": "花びらパーツ5",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/rose/step_4.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Cánh hoa 1.",
+            "vocabList": []
+          }
+        ]
+      }
+    ],
+    "assembly": [
+      {
+        "stepIndex": 1,
+        "imageUrl": "assets/images/rose/step_5.png",
+        "instructionVi": "Xếp 5 cánh hoa chồng nhẹ lên nhau theo vòng tròn, mỗi cánh gài phần khoá vào cánh liền kề.",
+        "vocabList": []
+      },
+      {
+        "stepIndex": 2,
+        "imageUrl": "assets/images/rose/step_6.png",
+        "instructionVi": "Siết nhẹ vòng tròn để các cánh ôm khít vào nhau, tạo độ cong tự nhiên như hoa nở.",
+        "vocabList": []
+      },
+      {
+        "stepIndex": 3,
+        "imageUrl": "assets/images/rose/step_7.png",
+        "instructionVi": "Ấn nhẹ đáy hoa để cố định hình dáng — [[薔薇|Bara|Hoa hồng]] module đã hoàn thành!",
+        "vocabList": [
+          {
+            "kanji": "薔薇",
+            "romaji": "Bara",
+            "meaningVi": "Hoa hồng"
+          }
+        ]
+      }
+    ]
+  },
+  "model_balloon": {
+    "modules": [
+      {
+        "moduleIndex": 1,
+        "moduleTitle": "Múi khí cầu 1",
+        "moduleTitleJP": "気球パーツ1",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/balloon/step_1.png",
+            "instructionVi": "Gấp chéo giấy vuông nhỏ thành hình tam giác rồi mở ra.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 2,
+            "imageUrl": "assets/images/balloon/step_2.png",
+            "instructionVi": "Gấp 2 cạnh đáy vào đường chéo giữa, tạo hình cái diều.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 3,
+            "imageUrl": "assets/images/balloon/step_3.png",
+            "instructionVi": "Gấp đôi hình diều theo trục dọc để tạo 1 múi cong.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 4,
+            "imageUrl": "assets/images/balloon/step_4.png",
+            "instructionVi": "Gấp nhỏ đầu nhọn để tạo phần chốt gài — hoàn thành 1 múi khí cầu.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 2,
+        "moduleTitle": "Múi khí cầu 2",
+        "moduleTitleJP": "気球パーツ2",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/balloon/step_4.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Múi khí cầu 1.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 3,
+        "moduleTitle": "Múi khí cầu 3",
+        "moduleTitleJP": "気球パーツ3",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/balloon/step_4.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Múi khí cầu 1.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 4,
+        "moduleTitle": "Múi khí cầu 4",
+        "moduleTitleJP": "気球パーツ4",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/balloon/step_4.png",
+            "instructionVi": "Lặp lại y hệt 4 bước của Múi khí cầu 1.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 5,
+        "moduleTitle": "Giỏ treo",
+        "moduleTitleJP": "バスケット",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/balloon/step_5.png",
+            "instructionVi": "Gấp 4 góc của giấy hình vuông nhỏ vào tâm.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 2,
+            "imageUrl": "assets/images/balloon/step_6.png",
+            "instructionVi": "Gấp 4 cạnh vào tâm lần nữa, mở nhẹ 4 góc để tạo đáy hộp.",
+            "vocabList": []
+          },
+          {
+            "stepIndex": 3,
+            "imageUrl": "assets/images/balloon/step_7.png",
+            "instructionVi": "Dựng các cạnh lên vuông góc để tạo thành hình giỏ nhỏ.",
+            "vocabList": []
+          }
+        ]
+      },
+      {
+        "moduleIndex": 6,
+        "moduleTitle": "Dây nối",
+        "moduleTitleJP": "つり紐",
+        "steps": [
+          {
+            "stepIndex": 1,
+            "imageUrl": "assets/images/balloon/step_8.png",
+            "instructionVi": "Gấp 4 dải giấy dài, mảnh, cuộn nhẹ 2 đầu để làm dây treo giỏ.",
+            "vocabList": []
+          }
+        ]
+      }
+    ],
+    "assembly": [
+      {
+        "stepIndex": 1,
+        "imageUrl": "assets/images/balloon/step_9.png",
+        "instructionVi": "Gài 4 múi khí cầu vào nhau qua phần chốt, xoay đều theo vòng tròn để tạo khối cầu.",
+        "vocabList": []
+      },
+      {
+        "stepIndex": 2,
+        "imageUrl": "assets/images/balloon/step_10.png",
+        "instructionVi": "Gắn giỏ treo vào đáy khối cầu bằng dây nối.",
+        "vocabList": []
+      },
+      {
+        "stepIndex": 3,
+        "imageUrl": "assets/images/balloon/step_11.png",
+        "instructionVi": "Điều chỉnh các múi cho đều và căng — [[気球|Kikyū|Khí cầu]] module đã hoàn thành!",
+        "vocabList": [
+          {
+            "kanji": "気球",
+            "romaji": "Kikyū",
+            "meaningVi": "Khí cầu"
+          }
+        ]
+      }
+    ]
+  }
 }

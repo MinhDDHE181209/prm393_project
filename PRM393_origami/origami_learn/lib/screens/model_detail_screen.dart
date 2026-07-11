@@ -42,26 +42,39 @@ class _ModelDetailScreenState extends State<ModelDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Preview ──
-            Container(
-              width: double.infinity,
-              height: 200,
-              decoration: BoxDecoration(
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                height: 200,
                 color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _getModelEmoji(model.difficulty),
-                    style: const TextStyle(fontSize: 72),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    model.nameJP,
-                    style: const TextStyle(color: Colors.white38, fontSize: 16),
-                  ),
-                ],
+                child: model.thumbnailUrl.isNotEmpty
+                    ? Image.asset(
+                        model.thumbnailUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(_getModelEmoji(model.difficulty),
+                                style: const TextStyle(fontSize: 72)),
+                            const SizedBox(height: 8),
+                            Text(model.nameJP,
+                                style: const TextStyle(
+                                    color: Colors.white38, fontSize: 16)),
+                          ],
+                        ),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(_getModelEmoji(model.difficulty),
+                              style: const TextStyle(fontSize: 72)),
+                          const SizedBox(height: 8),
+                          Text(model.nameJP,
+                              style: const TextStyle(
+                                  color: Colors.white38, fontSize: 16)),
+                        ],
+                      ),
               ),
             ),
             const SizedBox(height: 20),

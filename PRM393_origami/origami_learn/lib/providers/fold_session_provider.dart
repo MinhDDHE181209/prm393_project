@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/progress_service.dart';
 import '../services/vocab_service.dart';
+import '../models/origami_model.dart';
 import 'auth_provider.dart';
+import 'collection_provider.dart';
 import 'progress_provider.dart';
 import 'vocab_provider.dart';
 
@@ -167,10 +169,56 @@ final foldSessionProvider =
     NotifierProvider<FoldSessionNotifier, FoldSessionState>(
         FoldSessionNotifier.new);
 
+class InProgressData {
+  final OrigamiModel model;
+  final String emoji;
+  final double percent;
+  
+  const InProgressData({
+    required this.model,
+    required this.emoji,
+    required this.percent,
+  });
+}
+
 /// Session đang dở (dùng cho thẻ "Tiếp tục gấp" ở Home).
 final inProgressSessionProvider =
-    FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
+    FutureProvider.autoDispose<InProgressData?>((ref) async {
   final uid = ref.watch(currentUidProvider);
   if (uid == 'guest') return null;
-  return ref.read(progressServiceProvider).getLastSession(uid);
+  final session = await ref.read(progressServiceProvider).getLastSession(uid);
+  if (session == null) return null;
+
+  try {
+      final modelId = session['model_id'] as String;
+      final encoded = session['current_step'] as int;
+      final service = ref.read(origamiServiceProvider);
+      final model   = await service.getModelById(modelId);
+
+      // encoded = modulePart * 1000 + stepPart
+      // stepPart là bước hiện tại (0-based index đã +1 khi lưu)
+      final stepPart  = encoded % 1000;           // bước trong module
+      final total     = model.stepCount > 0 ? model.stepCount : 10;
+      final percent   = (stepPart / total).clamp(0.0, 1.0);
+
+      // Chọn emoji dựa trên tên model
+      String pickEmoji(String name) {
+        final n = name.toLowerCase();
+        if (n.contains('hạc') || n.contains('crane')) return '🦢';
+        if (n.contains('bướm') || n.contains('butterfly')) return '🦋';
+        if (n.contains('cá') || n.contains('fish')) return '🐟';
+        if (n.contains('hoa') || n.contains('flower')) return '🌸';
+        if (n.contains('thỏ') || n.contains('rabbit')) return '🐰';
+        if (n.contains('khủng long') || n.contains('dino')) return '🦕';
+        return '🎏';
+      }
+
+      return InProgressData(
+        model:   model,
+        emoji:   pickEmoji(model.nameVi),
+        percent: percent,
+      );
+  } catch (_) {
+      return null;
+  }
 });

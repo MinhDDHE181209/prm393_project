@@ -122,20 +122,43 @@ class _AssemblyScreenState extends ConsumerState<AssemblyScreen> {
                             width: 2,
                           ),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.join_full_outlined,
-                                size: 64,
-                                color: AppTheme.teal.withOpacity(0.6)),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Lắp ráp bước ${step.stepIndex}',
-                              style: TextStyle(
-                                  color: AppTheme.teal.withOpacity(0.8),
-                                  fontSize: 14),
-                            ),
-                          ],
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: step.imageUrl.isNotEmpty
+                              ? Image.asset(
+                                  step.imageUrl,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.join_full_outlined,
+                                          size: 64,
+                                          color: AppTheme.teal.withOpacity(0.6)),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Lắp ráp bước ${step.stepIndex}',
+                                        style: TextStyle(
+                                            color: AppTheme.teal.withOpacity(0.8),
+                                            fontSize: 14),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.join_full_outlined,
+                                        size: 64,
+                                        color: AppTheme.teal.withOpacity(0.6)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Lắp ráp bước ${step.stepIndex}',
+                                      style: TextStyle(
+                                          color: AppTheme.teal.withOpacity(0.8),
+                                          fontSize: 14),
+                                    ),
+                                  ],
+                                ),
                         ),
                       ),
                       const SizedBox(height: 20),

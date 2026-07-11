@@ -8,6 +8,7 @@ import '../../models/fold_step.dart';
 import '../../models/origami_model.dart';
 import '../../providers/fold_session_provider.dart';
 import '../../services/origami_service.dart';
+import '../../widgets/vocab_card.dart';
 
 class FoldModuleScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
@@ -152,20 +153,43 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
                             width: 2,
                           ),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.extension_outlined,
-                                size: 64,
-                                color: widget.paperColor.withOpacity(0.6)),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Module ${module.moduleIndex} · Bước ${step.stepIndex}',
-                              style: TextStyle(
-                                  color: widget.paperColor.withOpacity(0.8),
-                                  fontSize: 14),
-                            ),
-                          ],
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: step.imageUrl.isNotEmpty
+                              ? Image.asset(
+                                  step.imageUrl,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.extension_outlined,
+                                          size: 64,
+                                          color: widget.paperColor.withOpacity(0.6)),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Module ${module.moduleIndex} · Bước ${step.stepIndex}',
+                                        style: TextStyle(
+                                            color: widget.paperColor.withOpacity(0.8),
+                                            fontSize: 14),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.extension_outlined,
+                                        size: 64,
+                                        color: widget.paperColor.withOpacity(0.6)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Module ${module.moduleIndex} · Bước ${step.stepIndex}',
+                                      style: TextStyle(
+                                          color: widget.paperColor.withOpacity(0.8),
+                                          fontSize: 14),
+                                    ),
+                                  ],
+                                ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -192,10 +216,10 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
                               letterSpacing: 1.2),
                         ),
                         const SizedBox(height: 8),
-                        ...step.vocabList.map((v) => _VocabCard(
+                        ...step.vocabList.map((v) => VocabCard(
                               vocab: v,
                               isSaved: _savedVocabs.contains(v.kanji),
-                              onSave: () => _toggleSave(v),
+                              onToggle: () => _toggleSave(v),
                             )),
                       ],
                     ],
@@ -485,60 +509,6 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
             const SizedBox(height: 8),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ── VocabCard (dùng chung với fold_step_screen) ───────────────────────────────
-class _VocabCard extends StatelessWidget {
-  final VocabRef vocab;
-  final bool isSaved;
-  final VoidCallback onSave;
-  const _VocabCard(
-      {required this.vocab, required this.isSaved, required this.onSave});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.black26,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-            color: isSaved
-                ? AppTheme.amber.withOpacity(0.4)
-                : Colors.white12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(vocab.kanji,
-                    style: const TextStyle(
-                        color: AppTheme.amber,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold)),
-                Text(vocab.romaji,
-                    style:
-                        const TextStyle(color: Colors.white54, fontSize: 12)),
-                Text(vocab.meaningVi,
-                    style:
-                        const TextStyle(color: Colors.white70, fontSize: 13)),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: onSave,
-            icon: Icon(
-              isSaved ? Icons.star : Icons.star_border,
-              color: isSaved ? AppTheme.amber : Colors.white38,
-            ),
-          ),
-        ],
       ),
     );
   }

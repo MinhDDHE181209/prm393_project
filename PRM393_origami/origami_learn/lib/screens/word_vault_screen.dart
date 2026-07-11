@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../app/routes.dart';
 import '../app/theme.dart';
 import '../models/vocabulary.dart';
-import '../providers/vocab_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/vocab_provider.dart';
+import '../widgets/custom_filter_chip.dart';
+import '../widgets/vocab_tile.dart';
+import '../widgets/word_vault_empty_state.dart';
 
 class WordVaultScreen extends ConsumerStatefulWidget {
   const WordVaultScreen({super.key});
@@ -16,7 +19,6 @@ class WordVaultScreen extends ConsumerStatefulWidget {
 
 class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
   final _searchController = TextEditingController();
-  String _searchQuery = '';
 
   @override
   void dispose() {
@@ -34,7 +36,7 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
       return Scaffold(
         backgroundColor: AppTheme.background,
         appBar: _buildAppBar(),
-        body: _GuestPlaceholder(),
+        body: const GuestPlaceholder(),
       );
     }
 
@@ -53,12 +55,12 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
                 hintText: 'Tìm kanji, romaji, nghĩa...',
                 hintStyle: const TextStyle(color: Colors.white38),
                 prefixIcon: const Icon(Icons.search, color: Colors.white38),
-                suffixIcon: _searchQuery.isNotEmpty
+                suffixIcon: ref.watch(vocabSearchQueryProvider).isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, color: Colors.white38),
                         onPressed: () {
                           _searchController.clear();
-                          setState(() => _searchQuery = '');
+                          ref.read(vocabSearchQueryProvider.notifier).state = '';
                         },
                       )
                     : null,
@@ -69,7 +71,7 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
                   borderSide: BorderSide.none,
                 ),
               ),
-              onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
+              onChanged: (v) => ref.read(vocabSearchQueryProvider.notifier).state = v.trim().toLowerCase(),
             ),
           ),
 
@@ -78,19 +80,19 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                _FilterChip(
+                CustomFilterChip(
                   label: 'Tất cả',
                   selected: filter == VocabFilter.all,
                   onTap: () => ref.read(vocabFilterProvider.notifier).state = VocabFilter.all,
                 ),
                 const SizedBox(width: 8),
-                _FilterChip(
+                CustomFilterChip(
                   label: 'Cần ôn 🔴',
                   selected: filter == VocabFilter.needsReview,
                   onTap: () => ref.read(vocabFilterProvider.notifier).state = VocabFilter.needsReview,
                 ),
                 const SizedBox(width: 8),
-                _FilterChip(
+                CustomFilterChip(
                   label: 'Đã thuộc ✅',
                   selected: filter == VocabFilter.learned,
                   onTap: () => ref.read(vocabFilterProvider.notifier).state = VocabFilter.learned,
@@ -105,26 +107,13 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
               loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.amber)),
               error: (e, _) => Center(child: Text('Lỗi: $e', style: const TextStyle(color: Colors.red))),
               data: (groups) {
-                // Lọc từ vựng theo tìm kiếm trên từng nhóm
-                final List<CollectionGroupedVocabs> filteredGroups = [];
-                for (final g in groups) {
-                  final matchedWords = _searchQuery.isEmpty
-                      ? g.words
-                      : g.words.where((w) =>
-                          w.kanji.toLowerCase().contains(_searchQuery) ||
-                          w.romaji.toLowerCase().contains(_searchQuery) ||
-                          w.meaningVi.toLowerCase().contains(_searchQuery)).toList();
-                  if (matchedWords.isNotEmpty) {
-                    filteredGroups.add(CollectionGroupedVocabs(collection: g.collection, words: matchedWords));
-                  }
+                final searchQuery = ref.watch(vocabSearchQueryProvider);
+                if (groups.isEmpty) {
+                  return WordVaultEmptyState(filter: filter, hasSearch: searchQuery.isNotEmpty);
                 }
 
-                if (filteredGroups.isEmpty) {
-                  return _EmptyState(filter: filter, hasSearch: _searchQuery.isNotEmpty);
-                }
-
-                final totalWords = filteredGroups.fold<int>(0, (sum, g) => sum + g.words.length);
-                final allMatchedWords = filteredGroups.expand((g) => g.words).toList();
+                final totalWords = groups.fold<int>(0, (sum, g) => sum + g.words.length);
+                final allMatchedWords = groups.expand((g) => g.words).toList();
 
                 return Column(
                   children: [
@@ -148,9 +137,9 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
                     Expanded(
                       child: ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                        itemCount: filteredGroups.length,
+                        itemCount: groups.length,
                         itemBuilder: (context, groupIdx) {
-                          final g = filteredGroups[groupIdx];
+                          final g = groups[groupIdx];
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -192,7 +181,7 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: g.words.length,
                                 separatorBuilder: (_, __) => const SizedBox(height: 8),
-                                itemBuilder: (context, wordIdx) => _VocabTile(word: g.words[wordIdx]),
+                                itemBuilder: (context, wordIdx) => VocabTile(word: g.words[wordIdx]),
                               ),
                             ],
                           );
@@ -210,256 +199,72 @@ class _WordVaultScreenState extends ConsumerState<WordVaultScreen> {
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppTheme.background,
-      elevation: 0,
-      title: const Row(
-        children: [
-          Text('📖', style: TextStyle(fontSize: 20)),
-          SizedBox(width: 8),
-          Text('Word Vault',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
-        ],
-      ),
-      actions: [
-        Consumer(builder: (context, ref, _) {
-          final count = ref.watch(reviewCountProvider);
-          if (count == 0) return const SizedBox.shrink();
-          return Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Chip(
-              label: Text('$count cần ôn',
-                  style: const TextStyle(color: Colors.white, fontSize: 12)),
-              backgroundColor: Colors.red.shade700,
-              padding: EdgeInsets.zero,
-            ),
-          );
-        }),
+  return AppBar(
+    backgroundColor: AppTheme.background,
+    elevation: 0,
+    title: const Row(
+      children: [
+        Text('📖', style: TextStyle(fontSize: 20)),
+        SizedBox(width: 8),
+        Text('Word Vault',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
       ],
-    );
-  }
+    ),
+    actions: [
+      Consumer(builder: (context, ref, _) {
+        final status = ref.watch(vocabSyncNotifierProvider);
+        return IconButton(
+          icon: status == SyncStatus.syncing
+              ? const SizedBox(
+                  width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.amber),
+                )
+              : Icon(
+                  status == SyncStatus.error ? Icons.cloud_off : Icons.cloud_sync,
+                  color: status == SyncStatus.error ? Colors.red.shade300 : Colors.white70,
+                ),
+          tooltip: 'Đồng bộ Word Vault',
+          onPressed: status == SyncStatus.syncing
+              ? null
+              : () async {
+                  final notifier = ref.read(vocabSyncNotifierProvider.notifier);
+                  await notifier.sync();
+                  if (!context.mounted) return;
+                  final ok = ref.read(vocabSyncNotifierProvider) == SyncStatus.success;
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(ok
+                        ? 'Đồng bộ thành công: ${notifier.lastResult?.pushedCount ?? 0} từ đẩy lên, ${notifier.lastResult?.pulledCount ?? 0} từ tải về'
+                        : 'Lỗi đồng bộ: ${notifier.lastError ?? "không rõ"}'),
+                    backgroundColor: ok ? AppTheme.teal : Colors.red.shade700,
+                    behavior: SnackBarBehavior.floating,
+                  ));
+                },
+        );
+      }),
+      Consumer(builder: (context, ref, _) {
+        final count = ref.watch(reviewCountProvider);
+        final uid = ref.watch(currentUidProvider);
+        if (uid == 'guest' || count == 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Chip(
+            label: Text('$count cần ôn',
+                style: const TextStyle(color: Colors.white, fontSize: 12)),
+            backgroundColor: Colors.red.shade700,
+            padding: EdgeInsets.zero,
+          ),
+        );
+      }),
+    ],
+  );
+}
 
   void _startQuickReview(BuildContext context, List<VocabWord> words) {
-    // TODO Phase 7: mở quiz riêng với words này
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Ôn tập ${words.length} từ — hoàn thiện ở Phase 7'),
         backgroundColor: AppTheme.teal,
         behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-}
-
-// ── VocabTile ─────────────────────────────────────────────────────────────────
-class _VocabTile extends ConsumerWidget {
-  final VocabWord word;
-  const _VocabTile({required this.word});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(vocabNotifierProvider.notifier);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: word.needsReview
-              ? Colors.red.withValues(alpha: 0.3)
-              : AppTheme.teal.withValues(alpha: 0.3),
-        ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        title: Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(word.kanji,
-                style: const TextStyle(
-                    color: AppTheme.amber, fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(width: 8),
-            Text(word.romaji, style: const TextStyle(color: Colors.white54, fontSize: 13)),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(word.meaningVi,
-              style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: word.needsReview
-                    ? Colors.red.withValues(alpha: 0.15)
-                    : AppTheme.teal.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                word.isDueForReview ? 'Cần ôn' : 'Đã thuộc',
-                style: TextStyle(
-                  color: word.isDueForReview ? Colors.red.shade300 : AppTheme.teal,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => word.isDueForReview
-                  ? notifier.markReviewed(word.kanji, quality: 4)
-                  : notifier.markNeedsReview(word.kanji),
-              child: Icon(
-                word.isDueForReview ? Icons.check_circle_outline : Icons.refresh,
-                color: word.isDueForReview ? AppTheme.teal : Colors.white38,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 4),
-            GestureDetector(
-              onTap: () => _confirmDelete(context, ref),
-              child: const Icon(Icons.delete_outline, color: Colors.white24, size: 20),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title: const Text('Xoá từ?', style: TextStyle(color: Colors.white)),
-        content: Text('Xoá "${word.kanji}" khỏi Word Vault?',
-            style: const TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Huỷ', style: TextStyle(color: Colors.white54)),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(vocabNotifierProvider.notifier).removeWord(word.kanji);
-              Navigator.pop(context);
-            },
-            child: Text('Xoá', style: TextStyle(color: Colors.red.shade400)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Filter Chip ───────────────────────────────────────────────────────────────
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected ? AppTheme.amber : AppTheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? AppTheme.amber : Colors.white12),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.black : Colors.white60,
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Empty / Guest states ──────────────────────────────────────────────────────
-class _EmptyState extends StatelessWidget {
-  final VocabFilter filter;
-  final bool hasSearch;
-  const _EmptyState({required this.filter, required this.hasSearch});
-
-  @override
-  Widget build(BuildContext context) {
-    final icon = hasSearch ? '🔍'
-        : filter == VocabFilter.needsReview ? '🎉'
-        : filter == VocabFilter.learned ? '📚' : '⭐';
-    final title = hasSearch ? 'Không tìm thấy'
-        : filter == VocabFilter.needsReview ? 'Không có từ cần ôn!'
-        : filter == VocabFilter.learned ? 'Chưa có từ đã thuộc' : 'Word Vault trống';
-    final sub = hasSearch ? 'Thử từ khoá khác'
-        : filter == VocabFilter.needsReview ? 'Bạn đã thuộc hết rồi 🎊'
-        : filter == VocabFilter.learned ? 'Hoàn thành quiz để đánh dấu từ'
-        : 'Tap từ JP gạch chân khi gấp để lưu';
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 48)),
-          const SizedBox(height: 16),
-          Text(title,
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(sub, style: const TextStyle(color: Colors.white54, fontSize: 14)),
-        ],
-      ),
-    );
-  }
-}
-
-class _GuestPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('🔒', style: TextStyle(fontSize: 56)),
-            const SizedBox(height: 20),
-            const Text('Đăng ký để lưu từ vựng',
-                style: TextStyle(
-                    color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            const Text(
-              'Tạo tài khoản miễn phí để lưu từ JP và theo dõi tiến độ học',
-              style: TextStyle(color: Colors.white54, fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.amber,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () => context.goNamed(AppRoutes.auth),
-              child: const Text(
-  'Đăng ký ngay', 
-  style: TextStyle(fontWeight: FontWeight.bold), //  Đúng
-),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -5,7 +5,7 @@ import '../models/origami_model.dart';
 import '../services/vocab_service.dart';
 import 'auth_provider.dart';
 import 'collection_provider.dart';
-
+import '../services/vocab_sync_service.dart';
 // ─── Enum filter ─────────────────────────────────────────────────────────────
 enum VocabFilter { all, needsReview, learned }
 
@@ -15,6 +15,8 @@ final vocabServiceProvider = Provider<VocabService>((ref) => VocabService());
 // ─── Filter state ─────────────────────────────────────────────────────────────
 final vocabFilterProvider =
     StateProvider.autoDispose<VocabFilter>((ref) => VocabFilter.all);
+final vocabSearchQueryProvider = 
+    StateProvider.autoDispose<String>((ref) => '');
 
 // ─── Danh sách từ toàn bộ ────────────────────────────────────────────────────
 final vocabListProvider =
@@ -75,10 +77,17 @@ final groupedVocabsProvider = FutureProvider.autoDispose<List<CollectionGroupedV
   // 3. Lấy từ vựng hiện tại sau khi filter (nếu null thì coi như danh sách trống)
   final wordsAsync = ref.watch(filteredVocabProvider);
   final words = wordsAsync.valueOrNull ?? [];
+  final searchQuery = ref.watch(vocabSearchQueryProvider);
   
   // 4. Nhóm từ vựng theo collectionId
   final groupsMap = <String, List<VocabWord>>{};
   for (final w in words) {
+    if (searchQuery.isNotEmpty &&
+        !w.kanji.toLowerCase().contains(searchQuery) &&
+        !w.romaji.toLowerCase().contains(searchQuery) &&
+        !w.meaningVi.toLowerCase().contains(searchQuery)) {
+      continue;
+    }
     final col = modelToCollectionMap[w.modelId];
     final colId = col?.id ?? 'other';
     groupsMap.putIfAbsent(colId, () => []).add(w);
@@ -172,3 +181,38 @@ class VocabNotifier extends AsyncNotifier<void> {
 
 final vocabNotifierProvider =
     AsyncNotifierProvider<VocabNotifier, void>(VocabNotifier.new);
+
+
+// ─── Sync service & state ─────────────────────────────────────────────────────
+final vocabSyncServiceProvider =
+    Provider<VocabSyncService>((ref) => VocabSyncService());
+
+enum SyncStatus { idle, syncing, success, error }
+
+class VocabSyncNotifier extends StateNotifier<SyncStatus> {
+  final Ref ref;
+  VocabSyncNotifier(this.ref) : super(SyncStatus.idle);
+
+  SyncResult? lastResult;
+  String? lastError;
+
+  Future<void> sync() async {
+    final uid = ref.read(currentUidProvider);
+    if (uid == 'guest') return;
+
+    state = SyncStatus.syncing;
+    try {
+      final service = ref.read(vocabSyncServiceProvider);
+      lastResult = await service.syncAll(uid);
+      state = SyncStatus.success;
+      ref.invalidate(vocabListProvider); // refresh Word Vault sau khi pull
+    } catch (e) {
+      lastError = e.toString();
+      state = SyncStatus.error;
+    }
+  }
+}
+
+final vocabSyncNotifierProvider =
+    StateNotifierProvider<VocabSyncNotifier, SyncStatus>(
+        (ref) => VocabSyncNotifier(ref));

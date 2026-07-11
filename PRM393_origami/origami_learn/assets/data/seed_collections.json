@@ -1,10 +1,10 @@
 [
   {
-    "id": "col_birds",
-    "title": "Loài chim",
-    "titleJP": "鳥",
+    "id": "col_animals",
+    "title": "Động vật",
+    "titleJP": "動物",
     "coverUrl": "",
-    "emoji": "🐦",
+    "emoji": "🐾",
     "price": 0,
     "isUnlocked": true
   },
@@ -25,5 +25,14 @@
     "emoji": "🌸",
     "price": 29000,
     "isUnlocked": true
+  },
+  {
+    "id": "col_traditional",
+    "title": "Đồ vật truyền thống",
+    "titleJP": "伝統工芸",
+    "coverUrl": "",
+    "emoji": "🎎",
+    "price": 39000,
+    "isUnlocked": false
   }
 ]
