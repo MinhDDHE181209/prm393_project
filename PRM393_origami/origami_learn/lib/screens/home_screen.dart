@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../app/theme.dart';
-import '../models/collection_model.dart';
 import '../widgets/collection_card.dart';
 import '../widgets/continue_folding_card.dart';
 import 'package:go_router/go_router.dart';
-import '../app/router.dart';
 import '../app/routes.dart';
 import '../providers/auth_provider.dart';
 import '../providers/collection_provider.dart';
@@ -165,7 +163,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
 
               // ── Thẻ "Tiếp tục gấp" ──
-              if (_inProgressModel != null)
+              if (_inProgressModel != null) ...[
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 24, 16, 12),
+                    child: Text(
+                      'Tiếp tục gấp',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: ContinueFoldingCard(
+                      data: _inProgressModel,
+                      onTap: () {
+                        if (_inProgressModel.model.type == 'step') {
+                          context.pushNamed(
+                            AppRoutes.foldStep,
+                            pathParameters: {'modelId': _inProgressModel.model.id},
+                          );
+                        } else {
+                          context.pushNamed(
+                            AppRoutes.foldModule,
+                            pathParameters: {'modelId': _inProgressModel.model.id},
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+
+              // ── Tiêu đề "Bộ sưu tập" ──
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(16, 24, 16, 12),

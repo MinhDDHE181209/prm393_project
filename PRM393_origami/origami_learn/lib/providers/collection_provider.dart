@@ -22,9 +22,15 @@ final collectionsProvider =
       progressAsync.valueOrNull?.unlockedCollections ?? [];
 
   return collections.map((c) {
-    final isUnlocked = c.isUnlocked ||
-        unlockedIds.contains(c.id) ||
-        userType.unlocksAllCollections;
+    bool isUnlocked = false;
+    if (userType == UserType.premium) {
+      isUnlocked = true;
+    } else if (userType == UserType.free) {
+      isUnlocked = (c.id == 'col_animals' || c.id == 'col_flowers') ||
+          unlockedIds.contains(c.id);
+    } else {
+      isUnlocked = (c.id == 'col_animals') || unlockedIds.contains(c.id);
+    }
     return c.copyWith(isUnlocked: isUnlocked);
   }).toList();
 });
