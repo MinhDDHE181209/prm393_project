@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../app/router.dart';
 import '../../app/routes.dart';
 import '../../app/theme.dart';
 import '../../models/fold_step.dart';
 import '../../models/origami_model.dart';
-import '../../providers/fold_session_provider.dart';
 import '../../services/origami_service.dart';
+import '../../widgets/vocab_card.dart';
 
 class AssemblyScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
-  final Color paperColor;
 
   const AssemblyScreen({
     super.key,
     required this.model,
-    required this.paperColor,
   });
 
   @override
@@ -37,7 +34,6 @@ class _AssemblyScreenState extends ConsumerState<AssemblyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final savedVocabs = ref.watch(foldSessionProvider).savedVocabs;
 
     return FutureBuilder<List<FoldStep>>(
       future: _assemblyFuture,
@@ -177,11 +173,7 @@ class _AssemblyScreenState extends ConsumerState<AssemblyScreen> {
                                 fontSize: 11,
                                 letterSpacing: 1.2)),
                         const SizedBox(height: 8),
-                        ...step.vocabList.map((v) => _AssemblyVocabCard(
-                              vocab: v,
-                              isSaved: savedVocabs.contains(v.kanji),
-                              onSave: () => _toggleVocab(v),
-                            )),
+                        ...step.vocabList.map((v) => VocabCard(vocab: v)),
                       ],
                     ],
                   ),
@@ -217,10 +209,6 @@ class _AssemblyScreenState extends ConsumerState<AssemblyScreen> {
                             context.pushReplacementNamed(
                               AppRoutes.complete,
                               pathParameters: {'modelId': widget.model.id},
-                              queryParameters: {
-                                AppRoutes.paperColorQuery:
-                                    AppRouter.paperColorQuery(widget.paperColor),
-                              },
                             );
                           } else {
                             setState(() => _currentStep++);
@@ -248,81 +236,79 @@ class _AssemblyScreenState extends ConsumerState<AssemblyScreen> {
     );
   }
 
-  Future<void> _toggleVocab(VocabRef vocab) async {
-    final saved = await ref.read(foldSessionProvider.notifier).toggleVocab(
-          kanji: vocab.kanji,
-          romaji: vocab.romaji,
-          meaningVi: vocab.meaningVi,
-          modelId: widget.model.id,
-        );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(saved
-          ? '⭐ Đã lưu "${vocab.kanji}"'
-          : '✖ Đã bỏ lưu "${vocab.kanji}"'),
-      duration: const Duration(seconds: 1),
-      backgroundColor: Colors.black87,
-    ));
-  }
-
   Widget _buildInstructionText(FoldStep step) {
-    return Text(
-      step.instructionVi.replaceAll(RegExp(r'\[\[(.+?)\|(.+?)\|(.+?)\]\]'), r'$1'),
-      style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.6),
-    );
+    final text = step.instructionVi;
+    final regex = RegExp(r'\[\[(.+?)\|(.+?)\|(.+?)\]\]');
+    final spans = <InlineSpan>[];
+    int lastEnd = 0;
+
+    for (final match in regex.allMatches(text)) {
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(
+          text: text.substring(lastEnd, match.start),
+          style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.6),
+        ));
+      }
+      final kanji = match.group(1)!;
+      final romaji = match.group(2)!;
+      final meaning = match.group(3)!;
+
+      spans.add(WidgetSpan(
+        child: GestureDetector(
+          onTap: () => _showTooltip(kanji, romaji, meaning),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: AppTheme.amber.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(4),
+              border: const Border(
+                  bottom: BorderSide(color: AppTheme.amber, width: 1.5)),
+            ),
+            child: Text(kanji,
+                style: const TextStyle(
+                    color: AppTheme.amber,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600)),
+          ),
+        ),
+      ));
+      lastEnd = match.end;
+    }
+
+    if (lastEnd < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(lastEnd),
+        style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.6),
+      ));
+    }
+    return RichText(text: TextSpan(children: spans));
   }
-}
 
-class _AssemblyVocabCard extends StatelessWidget {
-  final VocabRef vocab;
-  final bool isSaved;
-  final VoidCallback onSave;
-
-  const _AssemblyVocabCard({
-    required this.vocab,
-    required this.isSaved,
-    required this.onSave,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.black26,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-            color: isSaved
-                ? AppTheme.amber.withOpacity(0.4)
-                : Colors.white12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(vocab.kanji,
-                    style: const TextStyle(
-                        color: AppTheme.amber,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold)),
-                Text(vocab.romaji,
-                    style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                Text(vocab.meaningVi,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: onSave,
-            icon: Icon(
-              isSaved ? Icons.star : Icons.star_border,
-              color: isSaved ? AppTheme.amber : Colors.white38,
-            ),
-          ),
-        ],
+  void _showTooltip(String kanji, String romaji, String meaning) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(kanji,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(romaji,
+                style: const TextStyle(color: Colors.white54, fontSize: 16)),
+            const SizedBox(height: 8),
+            Text(meaning,
+                style: const TextStyle(color: Colors.white70, fontSize: 18)),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

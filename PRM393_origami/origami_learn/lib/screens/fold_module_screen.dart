@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../app/router.dart';
 import '../../app/routes.dart';
 import '../../app/theme.dart';
 import '../../models/fold_step.dart';
@@ -12,12 +11,10 @@ import '../../widgets/vocab_card.dart';
 
 class FoldModuleScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
-  final Color paperColor;
 
   const FoldModuleScreen({
     super.key,
     required this.model,
-    required this.paperColor,
   });
 
   @override
@@ -48,7 +45,6 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
 
     final _currentModule = session.currentModule;
     final _currentStep = session.currentStep;
-    final _savedVocabs = session.savedVocabs;
     return FutureBuilder<ModuleData>(
       future: _dataFuture,
       builder: (context, snapshot) {
@@ -149,7 +145,7 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
                           color: AppTheme.surface,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: widget.paperColor.withOpacity(0.4),
+                            color: AppTheme.amber.withOpacity(0.4),
                             width: 2,
                           ),
                         ),
@@ -164,12 +160,12 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
                                     children: [
                                       Icon(Icons.extension_outlined,
                                           size: 64,
-                                          color: widget.paperColor.withOpacity(0.6)),
+                                          color: AppTheme.amber.withOpacity(0.6)),
                                       const SizedBox(height: 8),
                                       Text(
                                         'Module ${module.moduleIndex} · Bước ${step.stepIndex}',
                                         style: TextStyle(
-                                            color: widget.paperColor.withOpacity(0.8),
+                                            color: AppTheme.amber.withOpacity(0.8),
                                             fontSize: 14),
                                       ),
                                     ],
@@ -178,15 +174,15 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.extension_outlined,
-                                        size: 64,
-                                        color: widget.paperColor.withOpacity(0.6)),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Module ${module.moduleIndex} · Bước ${step.stepIndex}',
-                                      style: TextStyle(
-                                          color: widget.paperColor.withOpacity(0.8),
-                                          fontSize: 14),
+                                  Icon(Icons.extension_outlined,
+                                      size: 64,
+                                      color: AppTheme.amber.withOpacity(0.6)),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Module ${module.moduleIndex} · Bước ${step.stepIndex}',
+                                    style: TextStyle(
+                                        color: AppTheme.amber.withOpacity(0.8),
+                                        fontSize: 14),
                                     ),
                                   ],
                                 ),
@@ -216,11 +212,7 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
                               letterSpacing: 1.2),
                         ),
                         const SizedBox(height: 8),
-                        ...step.vocabList.map((v) => VocabCard(
-                              vocab: v,
-                              isSaved: _savedVocabs.contains(v.kanji),
-                              onToggle: () => _toggleSave(v),
-                            )),
+                      ...step.vocabList.map((v) => VocabCard(vocab: v)),
                       ],
                     ],
                   ),
@@ -347,10 +339,6 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
                   context.pushReplacementNamed(
                     AppRoutes.assembly,
                     pathParameters: {'modelId': widget.model.id},
-                    queryParameters: {
-                      AppRoutes.paperColorQuery:
-                          AppRouter.paperColorQuery(widget.paperColor),
-                    },
                   );
                 }
               },
@@ -405,23 +393,6 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
     );
   }
 
-  Future<void> _toggleSave(VocabRef vocab) async {
-    final saved = await ref.read(foldSessionProvider.notifier).toggleVocab(
-          kanji: vocab.kanji,
-          romaji: vocab.romaji,
-          meaningVi: vocab.meaningVi,
-          modelId: widget.model.id,
-        );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(saved
-          ? '⭐ Đã lưu "${vocab.kanji}"'
-          : '✖ Đã bỏ lưu "${vocab.kanji}"'),
-      duration: const Duration(seconds: 1),
-      backgroundColor: Colors.black87,
-    ));
-  }
-
   Widget _buildInstructionText(FoldStep step) {
     final text = step.instructionVi;
     final regex = RegExp(r'\[\[(.+?)\|(.+?)\|(.+?)\]\]');
@@ -471,7 +442,6 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
   }
 
   void _showTooltip(String kanji, String romaji, String meaning) {
-    final isSaved = ref.read(foldSessionProvider).savedVocabs.contains(kanji);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surface,
@@ -493,20 +463,7 @@ class _FoldModuleScreenState extends ConsumerState<FoldModuleScreen> {
             const SizedBox(height: 8),
             Text(meaning,
                 style: const TextStyle(color: Colors.white70, fontSize: 18)),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  _toggleSave(VocabRef(
-                      kanji: kanji, romaji: romaji, meaningVi: meaning));
-                  Navigator.pop(context);
-                },
-                icon: Icon(isSaved ? Icons.star : Icons.star_border),
-                label: Text(isSaved ? 'Bỏ lưu từ này' : '⭐ Lưu vào Word Vault'),
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
           ],
         ),
       ),

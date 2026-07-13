@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../app/constants.dart';
-import '../app/router.dart';
 import '../app/routes.dart';
 import '../app/theme.dart';
 import '../models/fold_step.dart';
@@ -15,9 +14,8 @@ import '../widgets/vocab_card.dart';
 
 class FoldStepScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
-  final Color paperColor;
 
-  const FoldStepScreen({super.key, required this.model, required this.paperColor});
+  const FoldStepScreen({super.key, required this.model});
 
   @override
   ConsumerState<FoldStepScreen> createState() => _FoldStepScreenState();
@@ -48,9 +46,6 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
     context.pushReplacementNamed(
       AppRoutes.complete,
       pathParameters: {'modelId': widget.model.id},
-      queryParameters: {
-        AppRoutes.paperColorQuery: AppRouter.paperColorQuery(widget.paperColor),
-      },
     );
   }
 
@@ -115,7 +110,7 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
                         color: AppTheme.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: widget.paperColor.withValues(alpha: 0.4), width: 2),
+                            color: AppTheme.amber.withValues(alpha: 0.4), width: 2),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(14),
@@ -128,11 +123,11 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
                                   children: [
                                     Icon(Icons.style_outlined,
                                         size: 64,
-                                        color: widget.paperColor.withValues(alpha: 0.6)),
+                                        color: AppTheme.amber.withValues(alpha: 0.6)),
                                     const SizedBox(height: 8),
                                     Text('Bước ${step.stepIndex}',
                                         style: TextStyle(
-                                            color: widget.paperColor.withValues(alpha: 0.8),
+                                            color: AppTheme.amber.withValues(alpha: 0.8),
                                             fontSize: 16)),
                                   ],
                                 ),
@@ -142,11 +137,11 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
                                 children: [
                                   Icon(Icons.style_outlined,
                                       size: 64,
-                                      color: widget.paperColor.withValues(alpha: 0.6)),
+                                      color: AppTheme.amber.withValues(alpha: 0.6)),
                                   const SizedBox(height: 8),
                                   Text('Bước ${step.stepIndex}',
                                       style: TextStyle(
-                                          color: widget.paperColor.withValues(alpha: 0.8),
+                                          color: AppTheme.amber.withValues(alpha: 0.8),
                                           fontSize: 16)),
                                 ],
                               ),
@@ -170,11 +165,7 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.2)),
                       const SizedBox(height: 8),
-                      ...step.vocabList.map((v) => VocabCard(
-                            vocab: v,
-                            isSaved: session.savedVocabs.contains(v.kanji),
-                            onToggle: () => _toggleVocab(v),
-                          )),
+                      ...step.vocabList.map((v) => VocabCard(vocab: v)),
                     ],
                     const SizedBox(height: 12),
                   ],
@@ -220,24 +211,6 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
         );
       },
     );
-  }
-
-  Future<void> _toggleVocab(VocabRef vocab) async {
-    final saved = await ref.read(foldSessionProvider.notifier).toggleVocab(
-          kanji: vocab.kanji,
-          romaji: vocab.romaji,
-          meaningVi: vocab.meaningVi,
-          modelId: widget.model.id,
-        );
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(saved
-          ? '⭐ Đã lưu "${vocab.kanji}" vào Word Vault'
-          : '✖ Đã bỏ lưu "${vocab.kanji}"'),
-      duration: const Duration(seconds: 1),
-      backgroundColor: Colors.black87,
-    ));
   }
 
   Widget _buildInstructionText(FoldStep step) {
@@ -288,7 +261,6 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
   }
 
   void _showVocabTooltip(VocabRef vocab) {
-    final isSaved = ref.read(foldSessionProvider).savedVocabs.contains(vocab.kanji);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surface,
@@ -306,19 +278,7 @@ class _FoldStepScreenState extends ConsumerState<FoldStepScreen> {
           const SizedBox(height: 8),
           Text(vocab.meaningVi,
               style: const TextStyle(color: Colors.white70, fontSize: 18)),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _toggleVocab(vocab);
-              },
-              icon: Icon(isSaved ? Icons.star : Icons.star_border),
-              label: Text(isSaved ? 'Bỏ lưu từ này' : '⭐ Lưu vào Word Vault'),
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
         ]),
       ),
     );

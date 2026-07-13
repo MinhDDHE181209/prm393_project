@@ -17,7 +17,6 @@ class AppConstants {
   // ── SharedPreferences keys ──
   static const String keyIsFirstTime = 'is_first_time';
   static const String keyIsGuest = 'is_guest';
-  static const String keySelectedPaperColor = 'selected_paper_color';
 
   // ── SQLite ──
   static const String dbName = 'origami_learn.db';

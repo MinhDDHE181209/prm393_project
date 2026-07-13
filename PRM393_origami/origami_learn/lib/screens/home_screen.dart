@@ -166,42 +166,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
               // ── Thẻ "Tiếp tục gấp" ──
               if (_inProgressModel != null)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: ContinueFoldingCard(
-                      data: _inProgressModel,
-                      onTap: () {
-                        final model = _inProgressModel.model;
-                        final colorQuery = AppRouter.paperColorQuery(
-                            const Color(0xFFE53935));
-                        if (model.type == 'step') {
-                          context
-                              .pushNamed(
-                                AppRoutes.foldStep,
-                                pathParameters: {'modelId': model.id},
-                                queryParameters: {
-                                  AppRoutes.paperColorQuery: colorQuery,
-                                },
-                              )
-                              .then((_) => ref.invalidate(inProgressSessionProvider));
-                        } else {
-                          context
-                              .pushNamed(
-                                AppRoutes.foldModule,
-                                pathParameters: {'modelId': model.id},
-                                queryParameters: {
-                                  AppRoutes.paperColorQuery: colorQuery,
-                                },
-                              )
-                              .then((_) => ref.invalidate(inProgressSessionProvider));
-                        }
-                      },
-                    ),
-                  ),
-                ),
-
-              // ── Tiêu đề "Bộ sưu tập" ──
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(16, 24, 16, 12),

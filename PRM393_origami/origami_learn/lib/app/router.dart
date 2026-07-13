@@ -86,15 +86,9 @@ class AppRouter {
         name: AppRoutes.foldStep,
         builder: (context, state) {
           final modelId = state.pathParameters['modelId']!;
-          final paperColor = Color(AppRoutes.parsePaperColor(
-            state.uri.queryParameters[AppRoutes.paperColorQuery],
-          ));
           return RouteModelLoader(
             modelId: modelId,
-            builder: (model) => FoldStepScreen(
-              model: model,
-              paperColor: paperColor,
-            ),
+            builder: (model) => FoldStepScreen(model: model),
           );
         },
       ),
@@ -103,15 +97,9 @@ class AppRouter {
         name: AppRoutes.foldModule,
         builder: (context, state) {
           final modelId = state.pathParameters['modelId']!;
-          final paperColor = Color(AppRoutes.parsePaperColor(
-            state.uri.queryParameters[AppRoutes.paperColorQuery],
-          ));
           return RouteModelLoader(
             modelId: modelId,
-            builder: (model) => FoldModuleScreen(
-              model: model,
-              paperColor: paperColor,
-            ),
+            builder: (model) => FoldModuleScreen(model: model),
           );
         },
       ),
@@ -120,15 +108,9 @@ class AppRouter {
         name: AppRoutes.assembly,
         builder: (context, state) {
           final modelId = state.pathParameters['modelId']!;
-          final paperColor = Color(AppRoutes.parsePaperColor(
-            state.uri.queryParameters[AppRoutes.paperColorQuery],
-          ));
           return RouteModelLoader(
             modelId: modelId,
-            builder: (model) => AssemblyScreen(
-              model: model,
-              paperColor: paperColor,
-            ),
+            builder: (model) => AssemblyScreen(model: model),
           );
         },
       ),
@@ -137,26 +119,14 @@ class AppRouter {
         name: AppRoutes.complete,
         builder: (context, state) {
           final modelId = state.pathParameters['modelId']!;
-          final paperColor = Color(AppRoutes.parsePaperColor(
-            state.uri.queryParameters[AppRoutes.paperColorQuery],
-          ));
           return RouteModelLoader(
             modelId: modelId,
-            builder: (model) => CompleteScreen(
-              model: model,
-              paperColor: paperColor,
-            ),
+            builder: (model) => CompleteScreen(model: model),
           );
         },
       ),
     ],
   );
-
-  /// Helper: màu giấy dạng query `E53935`.
-  static String paperColorQuery(Color color) {
-    final rgb = color.value & 0xFFFFFF;
-    return rgb.toRadixString(16).padLeft(6, '0').toUpperCase();
-  }
 }
 
 class _CollectionRouteLoader extends StatelessWidget {

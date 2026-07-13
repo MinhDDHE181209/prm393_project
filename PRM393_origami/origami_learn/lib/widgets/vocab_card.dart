@@ -4,10 +4,8 @@ import '../models/fold_step.dart';
 
 class VocabCard extends StatelessWidget {
   final VocabRef vocab;
-  final bool isSaved;
-  final VoidCallback onToggle;
 
-  const VocabCard({super.key, required this.vocab, required this.isSaved, required this.onToggle});
+  const VocabCard({super.key, required this.vocab});
 
   @override
   Widget build(BuildContext context) {
@@ -17,10 +15,7 @@ class VocabCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black26,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-            color: isSaved
-                ? AppTheme.amber.withValues(alpha: 0.4)
-                : Colors.white12),
+        border: Border.all(color: Colors.white12),
       ),
       child: Row(children: [
         Expanded(
@@ -35,13 +30,6 @@ class VocabCard extends StatelessWidget {
             Text(vocab.meaningVi,
                 style: const TextStyle(color: Colors.white70, fontSize: 13)),
           ]),
-        ),
-        IconButton(
-          onPressed: onToggle,
-          icon: Icon(
-            isSaved ? Icons.star : Icons.star_border,
-            color: isSaved ? AppTheme.amber : Colors.white38,
-          ),
         ),
       ]),
     );

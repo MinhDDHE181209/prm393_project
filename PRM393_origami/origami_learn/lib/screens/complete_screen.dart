@@ -14,12 +14,10 @@ import '../providers/vocab_provider.dart';
 
 class CompleteScreen extends ConsumerStatefulWidget {
   final OrigamiModel model;
-  final Color paperColor;
 
   const CompleteScreen({
     super.key,
     required this.model,
-    required this.paperColor,
   });
 
   @override
@@ -37,6 +35,7 @@ class _CompleteScreenState extends ConsumerState<CompleteScreen>
   bool    _quizDone     = false;
   String? _selectedAnswer;
   bool?   _isCorrect;
+  bool    _isLoading    = true;
 
   List<VocabRef> _modelVocabs = [];
   List<_QuizQuestion> _questions = [];
@@ -116,6 +115,7 @@ class _CompleteScreenState extends ConsumerState<CompleteScreen>
       setState(() {
         _modelVocabs = vocabs;
         _questions = _buildQuestions(vocabs);
+        _isLoading = false;
       });
     }
   }
@@ -147,6 +147,12 @@ class _CompleteScreenState extends ConsumerState<CompleteScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: AppTheme.amber)),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: _quizDone || _questions.isEmpty

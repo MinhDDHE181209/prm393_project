@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../app/router.dart';
 import '../../app/routes.dart';
 import '../../app/theme.dart';
 import '../../models/origami_model.dart';
@@ -14,20 +13,6 @@ class ModelDetailScreen extends StatefulWidget {
 }
 
 class _ModelDetailScreenState extends State<ModelDetailScreen> {
-  // Màu giấy có thể chọn
-  static const List<_PaperColor> _paperColors = [
-    _PaperColor(name: 'Đỏ', color: Color(0xFFE53935)),
-    _PaperColor(name: 'Cam', color: Color(0xFFFB8C00)),
-    _PaperColor(name: 'Vàng', color: Color(0xFFFDD835)),
-    _PaperColor(name: 'Xanh lá', color: Color(0xFF43A047)),
-    _PaperColor(name: 'Xanh dương', color: Color(0xFF1E88E5)),
-    _PaperColor(name: 'Tím', color: Color(0xFF8E24AA)),
-    _PaperColor(name: 'Hồng', color: Color(0xFFD81B60)),
-    _PaperColor(name: 'Trắng', color: Color(0xFFF5F5F5)),
-  ];
-
-  int _selectedColorIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     final model = widget.model;
@@ -109,76 +94,25 @@ class _ModelDetailScreenState extends State<ModelDetailScreen> {
               label: model.type == 'step' ? '🎯 Gấp từng bước' : '🧩 Gấp module',
               color: model.type == 'step' ? AppTheme.teal : AppTheme.amber,
             ),
-            const SizedBox(height: 28),
-
-            // ── Chọn màu giấy ──
-            const Text(
-              'Chọn màu giấy',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: List.generate(_paperColors.length, (i) {
-                final pc = _paperColors[i];
-                final isSelected = _selectedColorIndex == i;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedColorIndex = i),
-                  child: Tooltip(
-                    message: pc.name,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: pc.color,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected ? Colors.white : Colors.transparent,
-                          width: 3,
-                        ),
-                        boxShadow: isSelected
-                            ? [BoxShadow(color: pc.color.withOpacity(0.6), blurRadius: 8)]
-                            : null,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Đã chọn: ${_paperColors[_selectedColorIndex].name}',
-              style: const TextStyle(color: Colors.white54, fontSize: 13),
-            ),
             const SizedBox(height: 32),
 
             // ── Nút bắt đầu ──
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-             onPressed: () {
-  final colorQuery = AppRouter.paperColorQuery(
-      _paperColors[_selectedColorIndex].color);
-  if (model.type == 'step') {
-    context.pushNamed(
-      AppRoutes.foldStep,
-      pathParameters: {'modelId': model.id},
-      queryParameters: {AppRoutes.paperColorQuery: colorQuery},
-    );
-  } else {
-    context.pushNamed(
-      AppRoutes.foldModule,
-      pathParameters: {'modelId': model.id},
-      queryParameters: {AppRoutes.paperColorQuery: colorQuery},
-    );
-  }
-},
+                onPressed: () {
+                  if (model.type == 'step') {
+                    context.pushNamed(
+                      AppRoutes.foldStep,
+                      pathParameters: {'modelId': model.id},
+                    );
+                  } else {
+                    context.pushNamed(
+                      AppRoutes.foldModule,
+                      pathParameters: {'modelId': model.id},
+                    );
+                  }
+                },
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: const Text(
                   'Bắt đầu gấp',
@@ -218,11 +152,7 @@ class _ModelDetailScreenState extends State<ModelDetailScreen> {
   }
 }
 
-class _PaperColor {
-  final String name;
-  final Color color;
-  const _PaperColor({required this.name, required this.color});
-}
+
 
 class _InfoChip extends StatelessWidget {
   final IconData icon;
